@@ -1,0 +1,10 @@
+build/
+ios/build/
+ios/Backburner/Frameworks/
+*.o
+*.gguf
+cache/
+bench/results/*.log
+__pycache__/
+.DS_Store
+xcuserdata/

@@ -1,0 +1,293 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10100000000000000000001 /* SidecarApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200000000000000000001 /* SidecarApp.swift */; };
+		A10100000000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200000000000000000002 /* ContentView.swift */; };
+		A10100000000000000000003 /* RPCBridge.mm in Sources */ = {isa = PBXBuildFile; fileRef = A10200000000000000000003 /* RPCBridge.mm */; };
+		A10100000000000000000004 /* llama.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = A10200000000000000000006 /* llama.xcframework */; };
+		A10100000000000000000005 /* llama.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A10200000000000000000006 /* llama.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		A10100000000000000000006 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A10200000000000000000007 /* Metal.framework */; };
+		A10100000000000000000007 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A10200000000000000000008 /* Accelerate.framework */; };
+		A10100000000000000000009 /* CoreML.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1020000000000000000000C /* CoreML.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		A10300000000000000000001 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				A10100000000000000000005 /* llama.xcframework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		A10200000000000000000001 /* SidecarApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidecarApp.swift; sourceTree = "<group>"; };
+		A10200000000000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A10200000000000000000003 /* RPCBridge.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = RPCBridge.mm; sourceTree = "<group>"; };
+		A10200000000000000000004 /* RPCBridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RPCBridge.h; sourceTree = "<group>"; };
+		A10200000000000000000005 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A10200000000000000000006 /* llama.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = llama.xcframework; path = Frameworks/llama.xcframework; sourceTree = "<group>"; };
+		A10200000000000000000007 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
+		A10200000000000000000008 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
+		A1020000000000000000000C /* CoreML.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreML.framework; path = System/Library/Frameworks/CoreML.framework; sourceTree = SDKROOT; };
+		A10200000000000000000009 /* Sidecar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Sidecar.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1020000000000000000000A /* Sidecar-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Sidecar-Bridging-Header.h"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A10400000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10100000000000000000006 /* Metal.framework in Frameworks */,
+				A10100000000000000000007 /* Accelerate.framework in Frameworks */,
+				A10100000000000000000009 /* CoreML.framework in Frameworks */,
+				A10100000000000000000004 /* llama.xcframework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A10500000000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				A10500000000000000000002 /* Sidecar */,
+				A10500000000000000000003 /* Products */,
+				A10500000000000000000004 /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		A10500000000000000000002 /* Sidecar */ = {
+			isa = PBXGroup;
+			children = (
+				A10200000000000000000001 /* SidecarApp.swift */,
+				A10200000000000000000002 /* ContentView.swift */,
+				A10200000000000000000003 /* RPCBridge.mm */,
+				A10200000000000000000004 /* RPCBridge.h */,
+				A1020000000000000000000A /* Sidecar-Bridging-Header.h */,
+				A10200000000000000000005 /* Info.plist */,
+			);
+			path = Sidecar;
+			sourceTree = "<group>";
+		};
+		A10500000000000000000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A10200000000000000000009 /* Sidecar.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A10500000000000000000004 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				A10200000000000000000006 /* llama.xcframework */,
+				A10200000000000000000007 /* Metal.framework */,
+				A10200000000000000000008 /* Accelerate.framework */,
+				A1020000000000000000000C /* CoreML.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A10600000000000000000001 /* Sidecar */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10800000000000000000003 /* Build configuration list for PBXNativeTarget "Sidecar" */;
+			buildPhases = (
+				A10700000000000000000001 /* Sources */,
+				A10400000000000000000001 /* Frameworks */,
+				A10300000000000000000001 /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Sidecar;
+			productName = Sidecar;
+			productReference = A10200000000000000000009 /* Sidecar.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A10600000000000000000000 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					A10600000000000000000001 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+				};
+			};
+			buildConfigurationList = A10800000000000000000001 /* Build configuration list for PBXProject "Sidecar" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A10500000000000000000001;
+			productRefGroup = A10500000000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A10600000000000000000001 /* Sidecar */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A10700000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10100000000000000000001 /* SidecarApp.swift in Sources */,
+				A10100000000000000000002 /* ContentView.swift in Sources */,
+				A10100000000000000000003 /* RPCBridge.mm in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		A10900000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		A10900000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		A10900000000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Sidecar/Sidecar.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/Frameworks/llama.xcframework/ios-arm64/llama.framework/Headers",
+				);
+				INFOPLIST_FILE = Sidecar/Info.plist;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Sidecar/sme_attn_ios.o",
+				);
+				INFOPLIST_KEY_CFBundleDisplayName = Backburner;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "app.backburner.$(DEVELOPMENT_TEAM)";
+				PRODUCT_NAME = Sidecar;
+				SUPPORTED_PLATFORMS = "iphoneos";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_OBJC_BRIDGING_HEADER = "Sidecar/Sidecar-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		A10900000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Sidecar/Sidecar.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/Frameworks/llama.xcframework/ios-arm64/llama.framework/Headers",
+				);
+				INFOPLIST_FILE = Sidecar/Info.plist;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Sidecar/sme_attn_ios.o",
+				);
+				INFOPLIST_KEY_CFBundleDisplayName = Backburner;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "app.backburner.$(DEVELOPMENT_TEAM)";
+				PRODUCT_NAME = Sidecar;
+				SUPPORTED_PLATFORMS = "iphoneos";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_OBJC_BRIDGING_HEADER = "Sidecar/Sidecar-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A10800000000000000000001 /* Build configuration list for PBXProject "Sidecar" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10900000000000000000001 /* Debug */,
+				A10900000000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A10800000000000000000003 /* Build configuration list for PBXNativeTarget "Sidecar" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10900000000000000000003 /* Debug */,
+				A10900000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A10600000000000000000000 /* Project object */;
+}

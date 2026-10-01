@@ -1,0 +1,3 @@
+[submodule "llama.cpp"]
+	path = llama.cpp
+	url = https://github.com/StayLameBro/backburner-llama.cpp.git
