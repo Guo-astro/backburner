@@ -13,7 +13,7 @@ The engine is a llama.cpp fork (`llama.cpp/`, [StayLameBro/backburner-llama.cpp]
 with its own Mac kernels (SME2, Metal fusions, DFlash2 speculative decoding). Those speed things up on the Mac alone too; the
 numbers below keep the two apart.
 
-Tested on a MacBook Pro M4 Pro (24 GB) with an iPhone 17 Pro Max (A19 Pro) and an iPhone 16 Pro (A18 Pro).
+Tested on a MacBook Pro M4 Pro (24 GB) with iPhone 17 Pro Max (A19 Pro) and iPhone 16 Pro Max (A18 Pro) phones.
 
 ![Seconds of waiting for each file your agent reads](docs/img/wait-per-file.png)
 
@@ -106,7 +106,7 @@ measured on the same day, so there is no head-to-head number for it here.
 
 ## Setup
 
-You need an Apple Silicon Mac (tested: M4 Pro, 24 GB), an iPhone 15 Pro or newer (tested: 17 Pro Max, 16 Pro), a 10 Gb/s
+You need an Apple Silicon Mac (tested: M4 Pro, 24 GB), an iPhone 15 Pro or newer (tested: 17 Pro Max, 16 Pro Max), a 10 Gb/s
 USB-C cable (the cable in the iPhone box is USB 2 and too slow), and Xcode with an Apple developer team id for the app.
 
 ```bash
