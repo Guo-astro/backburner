@@ -5,7 +5,8 @@ Plug your iPhone into your MacBook with a 10 Gb/s USB-C cable and it helps run Q
 - **It reads prompts with the Mac.** For every batch of prompt tokens the Mac runs layers 1-40 and the iPhone runs 41-64,
   pipelined. Your agent waits less every time it reads a file or a tool result.
 - **It holds context the Mac has no room for.** A 24 GB Mac fits 64k tokens of 8-bit context next to the model. The iPhone
-  holds the oldest part past that, up to ~192k tokens at 8-bit (the limit depends on the phone's free memory).
+  holds the oldest part past that: the server sizes the total from the phone's free memory at startup (196k-229k tokens at
+  8-bit on an iPhone 17 Pro Max). Tested end to end to 128k at 8-bit.
 - **Same answers.** Greedy output is token-identical with and without the phone (256/256 tokens at 8k and 32k).
 
 The engine is a llama.cpp fork (`llama.cpp/`, [StayLameBro/backburner-llama.cpp](https://github.com/StayLameBro/backburner-llama.cpp))
@@ -40,7 +41,8 @@ A new omp session (omp's system prompt, project notes and 12 tools, 26,849 token
 
 After the first time, the SSD prompt cache (`scripts/proxy.py`) restores that 27k-token start in 0.3-5 s.
 
-Past 64k the Mac alone has to drop to 4-bit context to fit (and swaps); with the iPhone it stays 8-bit. Reading speed there is
+Past 64k the Mac-alone config switches to 4-bit context: 128k at 8-bit measured ~0.3 GB over the GPU's 20 GB memory limit
+with the draft model loaded (2026-09-23); 8-bit between 64k and 128k was not tested. With the iPhone it stays 8-bit. Reading speed there is
 about the same either way (59-68 tok/s Mac alone at 4-bit, 67-73 tok/s with the iPhone at 8-bit, 64k-96k), because split
 prefill turns off past the Mac's own 64k cells (see "Limits"). At 128k with the iPhone: 3 of 3 planted facts recalled
 (positions 1.5k, 40k, 100k), phone thermal state nominal.
@@ -64,8 +66,8 @@ measured on the same day, so there is no head-to-head number for it here.
 
 | | 8-bit context |
 |---|---|
-| Mac alone (24 GB) | 64k (128k only with 4-bit) |
-| Mac + iPhone 17 Pro Max | up to ~192k (computed at startup from the phone's free memory) |
+| Mac alone (24 GB) | 64k measured (128k only fits with 4-bit) |
+| Mac + iPhone 17 Pro Max | 196k-229k by the phone's free memory (sized at startup); tested to 128k |
 
 ## How it works
 
