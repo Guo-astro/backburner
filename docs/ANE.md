@@ -7,8 +7,9 @@ project's hardware (MacBook Pro M4 Pro 24 GB; iPhone 16 Pro Max A18 Pro; iPhone 
 
 Past 64k tokens the iPhone holds the oldest part of the KV cache and computes attention over it. Old keys and values never
 change, so each 16,384-key page of a layer is compiled into an ANE model with the keys and values as its fixed weights; each
-attention call sends only the queries. Code: `phone-attn/pa-ane.mm`, template builder `phone-attn/ane-kv/build.py`, push it
-with `scripts/phone-ane.sh IP` (the engine is on whenever the template is on the phone).
+attention call sends only the queries. Code: `phone-attn/pa-ane.mm`, template builder `phone-attn/ane-kv/build.py`, `scripts/serve.sh`
+pushes it the first time it sees the phone (`scripts/phone-ane.sh IP` by hand) and prints "ANE pages on"; the engine is on
+whenever the template is on the phone.
 
 - **Accuracy:** with fp16 page weights the model gives the same output as the exact path on a real 51k-token session (33 of
   33 tokens identical, same KL). int8 page weights are not accurate enough and are not used. The A18 ANE gives bit-identical

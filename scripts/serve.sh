@@ -8,7 +8,7 @@
 # - Speculative decoding = n-gram (copy) + DFlash2 drafter on the Mac GPU. Greedy (temperature 0) is fastest: the batched
 #   argmax path only engages for greedy requests; other temperatures still work, via the normal sampler chain.
 # - Memory (24 GB Mac): replay rollback (-1 GB) + drafter ubatch 64 (-1.3 GB) are what make IQ4_XS + drafter fit at 64k.
-#   128k fits Mac-only with q4_0 KV (BIG block below); 128k q8_0 and 262k need the phone (docs/phone-kv-262k.md).
+#   128k fits Mac-only with q4_0 KV (BIG block below); 128k q8_0 and 262k need the phone (README: "Phone-held context").
 # - Prompt cache on the SSD (scripts/proxy.py, PROXY=0 to turn off): the proxy owns PORT, the server runs on PORT+100.
 #   A new conversation restores its saved preamble (system prompt + tools, ~25k tokens for omp) in ~0.2 s instead of re-reading it
 #   for ~4 minutes; the first time a preamble is seen it is read once and saved. Conversations you switch away from are saved too.
@@ -24,7 +24,7 @@ if [ "${CLEAN:-0}" = 1 ]; then
 fi
 B=${BIN:-$PWD/llama.cpp/build-metal/bin}
 MODEL=${MODEL:-$HOME/Models/Qwen3.8-27B-IQ4_XS.gguf}
-DRAFT=${DRAFT:-$HOME/Models/dflash2-v2-q4km-self16.gguf}   # selector kept in f16: +7.5% acceptance vs the all-Q4_K file (docs/LEVER-MAP.md §6)
+DRAFT=${DRAFT:-$HOME/Models/dflash2-v2-q4km-self16.gguf}   # selector kept in f16: +7.5% acceptance vs the all-Q4_K file
 CTX=${CTX:-65536}
 if [ "$CTX" -gt 65536 ]; then KV=${KV:-q4_0}; else KV=${KV:-q8_0}; fi
 # PHONE=auto (default): find the iPhone on the USB cable (scripts/phone-up.sh: its current address, relaunch the Backburner app if it
@@ -33,6 +33,24 @@ if [ "$CTX" -gt 65536 ]; then KV=${KV:-q4_0}; else KV=${KV:-q8_0}; fi
 if [ "${PHONE:-auto}" != 0 ] && [ -z "${LLAMA_SPLIT_TAIL:-}${PHONE_KV:-}" ]; then
   if PUP=$(PHONES_ALL=1 "$(dirname "$0")/phone-up.sh"); then
     read -r PIP PTAIL PVER PAVAIL PWIRED PNAME <<< "$(head -1 <<< "$PUP")"
+    # The phone's Neural Engine takes part of the old-key attention while writing past 64k (docs/ANE.md: 279 -> 176 ms per token
+    # at 140k). It needs the page template in the app's Documents, which installing the app doesn't bring: push it once
+    # (scripts/phone-ane.sh builds it first if needed, with coremltools). PHONE_ANE=0: don't check.
+    ane_on() { printf 'mem\n' | nc -G 2 "$1" 50061 2>/dev/null | grep -q '"pa_ane"'; }
+    PANE=unchecked
+    if [ "${PHONE_ANE:-1}" != 0 ]; then
+      if ane_on "$PIP"; then PANE=on
+      else
+        echo "serve: the phone's ANE pages are off (no template on the phone yet): pushing it with scripts/phone-ane.sh" >&2
+        PANE=off
+        "$(dirname "$0")/phone-ane.sh" "$PIP" >&2   # relaunches the app; phone-up below waits for it either way
+        if PUP=$(PHONES_ALL=1 "$(dirname "$0")/phone-up.sh"); then
+          read -r PIP PTAIL PVER PAVAIL PWIRED PNAME <<< "$(head -1 <<< "$PUP")"
+          ane_on "$PIP" && PANE=on
+        fi
+        [ $PANE = off ] && echo "serve: ANE pages still off: old keys run on the phone GPU only (writing past 64k is slower). Check scripts/phone-ane.sh $PIP" >&2
+      fi
+    fi
     [ "${CLEAN:-0}" = 1 ] && PNAME=iPhone
     PHONE_IP=$PIP
     [ "$PTAIL" = 1 ] && export LLAMA_SPLIT_TAIL=$PIP:50060
@@ -73,12 +91,12 @@ if [ "${PHONE:-auto}" != 0 ] && [ -z "${LLAMA_SPLIT_TAIL:-}${PHONE_KV:-}" ]; the
       CTX_TOTAL=${CTX_TOTAL:-$PHONE_CAP}
     fi
     [ "${NPH:-1}" -gt 1 ] && echo "serve: $NPH iPhones share the old keys" >&2
-    echo "serve: $PNAME at $PIP: split prefill $([ "$PTAIL" = 1 ] && echo on || echo off); context up to ${CTX_TOTAL:-${CTX:-65536}} tokens (remote KV $([ -n "${PHONE_KV:-}" ] && echo on || echo off), v$PVER)" >&2
+    echo "serve: $PNAME at $PIP: split prefill $([ "$PTAIL" = 1 ] && echo on || echo off); context up to ${CTX_TOTAL:-${CTX:-65536}} tokens (remote KV $([ -n "${PHONE_KV:-}" ] && echo on || echo off), ANE pages $PANE, v$PVER)" >&2
   else
     echo "serve: no phone: Mac only, 64k context" >&2
   fi
 fi
-# PHONE_KV=ip:port (the Backburner app phone-attn, :50062): the phone holds the OLDEST KV pages (docs/phone-kv-262k.md). CTX is then the
+# PHONE_KV=ip:port (the Backburner app phone-attn, :50062): the phone holds the OLDEST KV pages (README: "Phone-held context"). CTX is then the
 # number of cells the Mac keeps (default 65536: with --cache-ram 0 / 6 checkpoints the 64k config is 18.4 GB, no swap; the phone
 # only takes what goes past 64k, so nothing slows down below that) and a conversation may grow to
 # CTX_TOTAL tokens. The phone's app and system memory determine the safe limit. KV may be q8_0, q4_0, or f16.
@@ -91,7 +109,7 @@ if [ -n "${PHONE_KV:-}" ]; then
   export LLAMA_REMOTE_PIPE=${LLAMA_REMOTE_PIPE:-1} LLAMA_UBATCH_REMOTE=${LLAMA_UBATCH_REMOTE:-512}
 fi
 PORT=${PORT:-8080}
-# SME co-attention (the Mac CPU's matrix units take the oldest keys of each attention layer; docs/sme-coattention.md): ON by default
+# SME co-attention (the Mac CPU's matrix units take the oldest keys of each attention layer; README: "SME2 on the Mac CPU"): ON by default
 # since 2026-09-25 (user: fine as long as output quality holds; they run only light apps beside the model). With llama.cpp 6bb2bffef+
 # (per-cluster SME worker roles, spin while jobs are queued): 51k -3.5 ms/round, 140k -9.8 ms/round; greedy output token-identical,
 # top-5 probability changes of the same size as a GPU split-count change. CAUTION: keeps ~8 P-cores busy while generating (server
@@ -120,12 +138,12 @@ if [ "$LOAD_MODE" != mmap ] && [ "${WL:-0}" -lt 20000 ]; then
 fi
 [ $BIG = 0 ] && [ "$LOAD_MODE" != mmap ] && EXTRA+=(-lm "$LOAD_MODE")
 # PHONE_DRAFT=ip:port (the Backburner app's ggml-rpc, e.g. 169.254.x.y:50052): the drafter runs on the phone. Frees ~2.8 GB of Mac memory
-# (the 64k Mac-only config swaps ~1.5-3 GB), but the draft is serial, so rounds are slower (docs/phone-draft-offload.md).
+# (the 64k Mac-only config swaps ~1.5-3 GB), but the draft is serial, so rounds are slower.
 # -dev MTL0 is mandatory: without it --rpc puts part of the 27B on the phone (3 tok/s).
 [ -n "${PHONE_DRAFT:-}" ] && EXTRA+=(--rpc "$PHONE_DRAFT" -dev MTL0 --spec-draft-device RPC0)
 
 export GGML_METAL_REGFED=1 GGML_METAL_FA_GQA=1 GGML_METAL_FA_PREFILL_GQA=1 LLAMA_BATCHED_ARGMAX=1 SPEC_DRAFT_UBATCH=64
-# lossless speculative sampling for sampled (temperature > 0) requests, e.g. omp: +12% on the omp replay (docs/LEVER-MAP.md)
+# lossless speculative sampling for sampled (temperature > 0) requests, e.g. omp: +12% on the omp replay
 export LLAMA_SPEC_SAMPLE=${LLAMA_SPEC_SAMPLE:-1}
 # split prefill with the phone (LLAMA_SPLIT_TAIL=IP:50060): split messages from 512 tokens (a 2k tool result would never reach
 # the old 2048 minimum), and keep the prompt in one batch so the phone gets all but one ubatch (the server's 4 + n_ubatch
@@ -146,7 +164,7 @@ export LLAMA_SPEC_DEPTH_CAP=${LLAMA_SPEC_DEPTH_CAP-65537:4}
 # block verification (Sun et al., ICLR 2025): lossless, never accepts fewer tokens than token-by-token verification.
 # 2026-09-24, real 26k omp turn, one server, 6 seeds ABAB: 3.15 -> 3.31 tokens/round (+5%), 22.8 -> 23.6 tok/s.
 export LLAMA_SPEC_BLOCK=${LLAMA_SPEC_BLOCK:-1}
-# confidence-dependent q sharpening (lossless): +0.6-0.7% tokens/round, fitted on one capture and confirmed on another (docs/BOARD.md)
+# confidence-dependent q sharpening (lossless): +0.6-0.7% tokens/round, fitted on one capture and confirmed on another
 export LLAMA_SPEC_Q_CONF=${LLAMA_SPEC_Q_CONF:-1}
 [ "$SME" != 0 ] && export GGML_METAL_FA_SME=$SME GGML_METAL_FA_SME_MIN_KV=$SME_MIN_KV
 # SME2 prefill matmuls (llama.cpp ggml-metal-mmsme.m, 2026-09-27): the CPU's SME units take ~30% of the tokens of every prefill

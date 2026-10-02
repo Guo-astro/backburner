@@ -1,6 +1,6 @@
 // phone-attn.h - the phone holds the OLDEST KV pages of every full-attention layer and computes their
 // share of each attention op; the Mac merges the phone's partial with its own (log-sum-exp merge).
-// Design: docs/phone-kv-262k.md. Header-only; built into two programs:
+// Design: README.md, "Phone-held context". Header-only; built into two programs:
 //   - ios/Sidecar (RPCBridge.mm)              the real phone, port 50062
 //   - phone-attn/pa-tool.cpp (macOS)          "loopback phone" on the Mac CPU + the test client
 // Both compute with scripts/sme/sme_attn.c (SME2, 512-bit SVL: M4, A18 Pro, A19 Pro).
@@ -168,7 +168,7 @@ inline double wired_max_mb() {
     return v;
 }
 
-// optional page engine for the OLDEST keys (the Neural Engine, pa-ane.mm; docs/ane-kv-plumbing.md): each layer's keys
+// optional page engine for the OLDEST keys (the Neural Engine, pa-ane.mm; docs/ANE.md): each layer's keys
 // [p*page_keys(), (p+1)*page_keys()) become one page model once the layer holds all of them. Server-internal: the wire format
 // does not change. Builds run on the engine's own thread, never inside ATTN.
 struct page_engine {

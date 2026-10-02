@@ -1,4 +1,4 @@
-// pa-ane.mm - phone-attn's Neural Engine page engine (docs/ane-kv-plumbing.md): the OLDEST keys of each full-attention
+// pa-ane.mm - phone-attn's Neural Engine page engine (docs/ANE.md): the OLDEST keys of each full-attention
 // layer run as CoreML models whose conv weights are the keys and values themselves.
 //
 // One page model = one layer's 16,384 keys, all KV heads: q [1, nkv*256, 1, 48] (f16, scale folded in) and c [1, nkv, 1, 48]
@@ -358,7 +358,7 @@ private:
         const auto t0 = std::chrono::steady_clock::now();
         const bool reload = s.state == SUSPENDED;
 #if TARGET_OS_IPHONE
-        // a loaded page model counts 1:1 against the app's memory limit (M2, docs/ane-kv-plumbing.md §4)
+        // a loaded page model counts 1:1 against the app's memory limit (M2, docs/ANE.md)
         static const size_t reserve = (size_t) (getenv("PA_ANE_RESERVE_MB") ? atoi(getenv("PA_ANE_RESERVE_MB")) : 1024) << 20;
         if (os_proc_available_memory() < model_bytes_ + reserve) { why = "app memory"; return 2; }
 #endif

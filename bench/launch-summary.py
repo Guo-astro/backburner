@@ -3,7 +3,7 @@
 (bench/launch-bench.py, launch-bench-mlx.py, agent-bench.py). Prints Markdown. Smoke and test rows are skipped; when a
 config was run more than once, the latest full run is used and the others are listed under "other runs".
 
-  bench/launch-summary.py > docs/launch/RESULTS.md
+  bench/launch-summary.py > bench/results/summary.md
 """
 import json, os
 

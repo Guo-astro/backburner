@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""M1 of docs/ane-kv-plumbing.md: can a page model be made by rewriting a TEMPLATE .mlmodelc's weights/weight.bin (what the
+"""M1 of docs/ANE.md: can a page model be made by rewriting a TEMPLATE .mlmodelc's weights/weight.bin (what the
 phone would do) instead of a fresh coremltools build? Builds template A (random K/V), fresh B (other K/V), patches a copy of A
 with B's K'/V^T at the blob offsets named in model.mil, then on the Mac ANE (bit-identical to the A18's) compares patched vs
 fresh B outputs bit for bit on the same inputs. Also checks the patched weight.bin equals B's byte for byte.
