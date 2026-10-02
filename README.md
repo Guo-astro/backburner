@@ -1,18 +1,153 @@
 # Backburner
 
-Your iPhone helps your Mac run Qwen3.8-27B locally. Plugged in over a 10 Gb/s USB-C cable, the iPhone reads prompts
-together with the Mac (the Mac runs layers 1-40, the iPhone 41-64) and holds the oldest part of the context once the Mac
-runs out of room (past 64k tokens on a 24 GB Mac).
+Plug your iPhone into your MacBook with a 10 Gb/s USB-C cable and it helps run Qwen3.8-27B locally:
 
-Status: private, pre-release. Setup steps and the benchmark write-up are in progress.
+- **It reads prompts with the Mac.** For every batch of prompt tokens the Mac runs layers 1-40 and the iPhone runs 41-64,
+  pipelined. Your agent waits less every time it reads a file or a tool result.
+- **It holds context the Mac has no room for.** A 24 GB Mac fits 64k tokens of 8-bit context next to the model. The iPhone
+  holds the oldest part past that, up to ~192k tokens at 8-bit (the limit depends on the phone's free memory).
+- **Same answers.** Greedy output is token-identical with and without the phone (256/256 tokens at 8k and 32k).
 
-- `llama.cpp/`: the engine, a llama.cpp fork (submodule: StayLameBro/backburner-llama.cpp)
-- `ios/Backburner/`: the iPhone app
-- `scripts/serve.sh`: the Mac server (OpenAI-compatible), uses the iPhone when it's plugged in
-- `bench/`: the benchmarks and their raw results (`bench/results/*.jsonl`)
+The engine is a llama.cpp fork (`llama.cpp/`, [StayLameBro/backburner-llama.cpp](https://github.com/StayLameBro/backburner-llama.cpp))
+with its own Mac kernels (SME2, Metal fusions, DFlash2 speculative decoding). Those speed things up on the Mac alone too; the
+numbers below keep the two apart.
 
 Tested on a MacBook Pro M4 Pro (24 GB) with an iPhone 17 Pro Max (A19 Pro) and an iPhone 16 Pro (A18 Pro).
 
-Built with heavy help from Claude Opus 5.5.
+![Seconds of waiting for each file your agent reads](docs/img/wait-per-file.png)
+
+## Results
+
+Measured on 2026-10-01: Qwen3.8-27B IQ4_XS, MacBook Pro M4 Pro 24 GB, iPhone 17 Pro Max over USB-C. Raw rows are in
+`bench/results/*.jsonl`; the scripts that produced them are in `bench/`.
+
+### Reading (prefill): Mac alone vs Mac + iPhone, same build
+
+A 2,000-token file or tool result read into a saved agent session (`bench/turn-bench.py`, two reads per depth):
+
+| Context already in the session | Mac alone | Mac + iPhone | |
+|---|---|---|---|
+| 16k | 109 tok/s (18.8 s) | 157 tok/s (13.1 s) | +44%, 31% less waiting |
+| 32k | 101 tok/s (20.3 s) | 130 tok/s (15.8 s) | +29%, 22% less waiting |
+| 48k | 87 tok/s (23.5 s) | 113 tok/s (18.1 s) | +30%, 23% less waiting |
+
+A new omp session (omp's system prompt, project notes and 12 tools, 26,849 tokens, read cold; `bench/session-bench.py`):
+
+| | stock llama.cpp | this fork, Mac alone | this fork + iPhone |
+|---|---|---|---|
+| first answer | 245 s | 228 s | 168 s |
+| later turns (1.3-1.9k-token tool results) | 17.9 s | 19.2 s | 14.5 s |
+
+After the first time, the SSD prompt cache (`scripts/proxy.py`) restores that 27k-token start in 0.3-5 s.
+
+Past 64k the Mac alone has to drop to 4-bit context to fit (and swaps); with the iPhone it stays 8-bit. Reading speed there is
+about the same either way (59-68 tok/s Mac alone at 4-bit, 67-73 tok/s with the iPhone at 8-bit, 64k-96k), because split
+prefill turns off past the Mac's own 64k cells (see "Limits"). At 128k with the iPhone: 3 of 3 planted facts recalled
+(positions 1.5k, 40k, 100k), phone thermal state nominal.
+
+### Writing (decode)
+
+The phone does not change writing speed below 64k; the fork's kernels and draft model do:
+
+| | context | tok/s |
+|---|---|---|
+| stock llama.cpp (Homebrew), Mac | 27-33k | 11.3 |
+| this fork, Mac alone | 27-33k | 25.0 |
+| this fork + iPhone | 27-33k | 25.1 |
+| this fork + iPhone, a real omp session (36 requests) | under 16k / 16-32k / 32-49k | 29.8 / 27.5 / 24.3 (medians) |
+| this fork + iPhone | 128k | 12.6 (greedy, 256 tokens) |
+
+Medium thinking, omp's request fields, the server's default sampling. Mac-alone writing speed at 128k (4-bit) was not
+measured on the same day, so there is no head-to-head number for it here.
+
+### Context you can hold
+
+| | 8-bit context |
+|---|---|
+| Mac alone (24 GB) | 64k (128k only with 4-bit) |
+| Mac + iPhone 17 Pro Max | up to ~192k (computed at startup from the phone's free memory) |
+
+## How it works
+
+- **Split prefill** (`llama.cpp/src/llama-split.cpp`; the phone's tail server is in `ios/Backburner`). The Mac runs layers
+  1-40 of each 256-token ubatch and streams the residual to the phone, which runs layers 41-64 on its GPU while the Mac starts
+  the next ubatch. The phone keeps a mirror of its layers' KV rows and recurrent state; only new rows cross the cable. The last
+  ubatch of each batch runs on the Mac so outputs stay local.
+- **Phone-held context** (`phone-attn/`, protocol in `phone-attn/phone-attn.h`). Past the Mac's 64k cells, the oldest KV pages
+  (4,096 keys each) move to the phone. Each attention step sends Q to the phone and merges its partial result (O, max, sum)
+  with the Mac's. While the phone holds keys, 512-token ubatches run as two staggered halves so Mac and phone overlap.
+  Two phones can share the old pages (`docs/TWO-PHONES.md`).
+- **SME2 on the Mac CPU.** The M4's SME units take ~30% of the rows of each big prefill matmul while the GPU does the rest
+  (Mac-only pp2048: 121.6 -> 157.1 tok/s; 51k: 79.5 -> 92.1). Past 40k keys they also take the oldest keys of each attention
+  layer while decoding (SME co-attention). Prior art: FusionML (arXiv 2607.22785) also splits matmuls across Apple compute
+  units.
+- **DFlash2 speculative decoding** with recurrent-state replay for the hybrid (GDN + attention) model, lossless speculative
+  sampling for sampled requests, and block verification (Sun et al., ICLR 2025).
+- **SSD prompt cache** (`scripts/proxy.py`): a known system prompt is restored from disk instead of re-read.
+- **Memory.** The model is loaded wired (`--load-mode none`) so macOS can't page it out; the token-embedding table is read
+  from the mapped file, the scheduler's worst-case buffer is mapped on demand, and freed heap goes back to macOS. Server
+  footprint after a read: 19.7 -> 18.7 GB (2026-10-01).
+- **The iPhone's Neural Engine** was explored for old KV pages and for FFN prefill; results, and why it isn't in the default
+  path, are in `docs/ANE.md`.
+
+## Limits
+
+- **Small reads stay on the Mac.** The phone joins a read of more than ~512 tokens (three 256-token ubatches; the last one
+  always runs on the Mac). Most agent steps are smaller: in a real omp session 7 of 36 requests were big enough, and they
+  carried ~83% of the tokens read.
+- **Split prefill stops past the Mac's 64k cells.** The phone's half of the model can't see the phone-held old keys yet, so a
+  read that would end past 64k runs on the Mac alone. Keeping split prefill on there is the next big speed-up.
+- **Writing speed is the Mac's.** The phone only joins decoding past 64k (attention over the old keys).
+- **A failure turns the phone off for 60 s**; the batch reruns on the Mac and the server log says so.
+- **Saving a session while the phone holds keys** (past 64k) is not supported yet.
+- One request at a time (`-np 1`).
+
+## Setup
+
+You need an Apple Silicon Mac (tested: M4 Pro, 24 GB), an iPhone 15 Pro or newer (tested: 17 Pro Max, 16 Pro), a 10 Gb/s
+USB-C cable (the cable in the iPhone box is USB 2 and too slow), and Xcode with an Apple developer team id for the app.
+
+```bash
+git clone --recursive https://github.com/StayLameBro/backburner && cd backburner
+
+# 1. the Mac engine
+cmake -S llama.cpp -B llama.cpp/build-metal -DCMAKE_BUILD_TYPE=Release
+cmake --build llama.cpp/build-metal --target llama-server llama-quantize -j
+
+# 2. the models: a Qwen3.8-27B IQ4_XS GGUF at ~/Models/Qwen3.8-27B-IQ4_XS.gguf, then the draft model
+huggingface-cli download z-lab/Qwen3.8-27B-DFlash2 --local-dir ~/Models/qwen38-27b-dflash2
+scripts/make-drafter.sh ~/Models/qwen38-27b-dflash2 ~/Models/dflash2-v2-q4km-self16.gguf
+
+# 3. the iPhone app (phone plugged in and unlocked)
+DEVELOPMENT_TEAM=<your team id> UDID=<your iPhone's UDID> scripts/build-iphone.sh
+
+# 4. the phone's half of the model (layers 41-64, ~5.1 GB), copied over the cable
+python3 scripts/split-gguf.py ~/Models/Qwen3.8-27B-IQ4_XS.gguf ~/Models/tail-iq4xs-L40-nohead.gguf -L 40
+scripts/phone-tail.sh L40
+
+# 5. after every reboot: let the GPU keep the model wired (macOS resets this limit)
+sudo sysctl iogpu.wired_limit_mb=20480
+
+# 6. run: OpenAI-compatible on :8080, uses the iPhone when it's plugged in with Backburner open
+scripts/serve.sh
+PHONE=0 scripts/serve.sh      # the Mac alone
+```
+
+`scripts/serve.sh` documents each setting next to the measurement that chose it.
+
+## Reproducing the numbers
+
+```bash
+bench/turn-bench.py --build            # once: a saved session at 16k / 32k / 48k (Mac alone)
+bench/turn-bench.py --config mac       # read 2,000-token files into each saved session
+bench/turn-bench.py --config phone
+bench/session-bench.py --config stock|fork-mac|fork-phone   # an omp-shaped session, ~5 min each
+bench/long-bench.py                    # past 64k (long: cold reads to 128k)
+```
+
+## Status
+
+Pre-release. Next: split prefill past 64k, an App Store build, and upstreaming what makes sense to llama.cpp.
+Built with a lot of help from Claude Opus 5.5.
 
 MIT license (llama.cpp keeps its own MIT license).

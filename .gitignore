@@ -8,3 +8,6 @@ bench/results/*.log
 __pycache__/
 .DS_Store
 xcuserdata/
+bench/results/slots/
+*.bin
+*.bin.dft

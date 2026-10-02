@@ -168,7 +168,12 @@ mkdir -p "$CACHE_DIR"
 # Host memory (2026-09-26): llama-server defaults keep an 8 GB RAM prompt cache (--cache-ram 8192) and up to 32 recurrent-state
 # checkpoints per slot (~150-190 MB each for this hybrid model): a live omp session reached a 21.1 GB server footprint with
 # ~2.8 GB of idle host allocations swapped out. The proxy already caches prompts on the SSD, so the RAM cache is off
-# (CACHE_RAM to override) and checkpoints are capped at 6 (CTX_CHECKPOINTS).
+# (CACHE_RAM to override) and checkpoints are capped (CTX_CHECKPOINTS, 3 since 2026-10-01).
+# 2026-10-01: the 64k phone config still swapped 1.7-2.4 GB. The token-embedding table now stays in the mapped model file
+# (LLAMA_LAZY_EMBD: clean pages, never swapped, one row read per token) and 3 checkpoints are kept (agent turns append to the
+# prompt; a divergence is near the end, where the newest checkpoints are). With the llama.cpp fixes (scheduler buffer mapped
+# on demand, freed heap returned to macOS): server footprint after a read 19.7 -> 18.7 GB.
+export LLAMA_LAZY_EMBD=${LLAMA_LAZY_EMBD:-1}
 SPORT=$PORT
 [ "${PROXY:-1}" != 0 ] && SPORT=$((PORT + 100))
 
@@ -184,7 +189,7 @@ phone_note starting
 "$B/llama-server" -m "$MODEL" -ngl 999 -fa on -c "$CTX" -np 1 -ctk "$KV" -ctv "$KV" -t 2 -tb 2 \
   --spec-type "${SPEC_TYPE:-ngram-simple,draft-dflash}" -md "$DRAFT" -ngld 999 --spec-draft-n-max 7 --spec-gdn-replay 8 \
   --slot-save-path "$CACHE_DIR/" --jinja --host 127.0.0.1 --port "$SPORT" \
-  --cache-ram "${CACHE_RAM:-0}" --ctx-checkpoints "${CTX_CHECKPOINTS:-6}" \
+  --cache-ram "${CACHE_RAM:-0}" --ctx-checkpoints "${CTX_CHECKPOINTS:-3}" \
   ${EXTRA[@]+"${EXTRA[@]}"} ${SERVER_ARGS:-} "$@" &
 SRV=$!
 PRX=

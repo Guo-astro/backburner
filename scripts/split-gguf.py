@@ -7,7 +7,7 @@ The HEAD is not written: the Mac runs the full GGUF with llama_set_layer_range(c
 the weight pages with the decode context.
 
 usage: split-gguf.py IN.gguf OUT.gguf -L 48 [--keep-mtp]
-run with /Library/Frameworks/Python.framework/Versions/3.13/bin/python3 (has numpy)
+run with a python3 that has numpy
 """
 from __future__ import annotations
 
