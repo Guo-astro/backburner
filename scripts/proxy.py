@@ -294,7 +294,9 @@ class H(http.server.BaseHTTPRequestHandler):
     def log_message(self, *a):
         pass
 
-    def relay(self, body_bytes, watch=False):
+    def relay(self, body_bytes, watch=False, strip_progress=False):
+        """strip_progress: the proxy asked the server for prompt_progress events (the client didn't): they feed the phone's
+        end-to-end reading speed and are taken out of the stream the client sees."""
         c = http.client.HTTPConnection('127.0.0.1', args.upstream, timeout=3600)
         hdrs = {k: v for k, v in self.headers.items() if k.lower() not in ('host', 'content-length', 'connection')}
         if body_bytes is not None:
@@ -313,16 +315,35 @@ class H(http.server.BaseHTTPRequestHandler):
             chunk = r.read1(65536)
             if not chunk:
                 break
+            out = chunk
             if watch and PHONE.ip:   # SSE events: the first thinking / answer token ends the prompt read
                 buf += chunk
+                out = b''
                 while b'\n\n' in buf:
                     ev, buf = buf.split(b'\n\n', 1)
                     if not ev.startswith(b'data: {'):
+                        out += ev + b'\n\n'
                         continue
                     try:
-                        d = (json.loads(ev[6:]).get('choices') or [{}])[0].get('delta') or {}
+                        obj = json.loads(ev[6:])
                     except ValueError:
+                        out += ev + b'\n\n'
                         continue
+                    pp = obj.get('prompt_progress')
+                    if pp:
+                        # the whole prompt read, end to end: new tokens over the server's time so far (the phone shows this,
+                        # not its own layers' rate)
+                        new, ms = pp.get('processed', 0) - pp.get('cache', 0), pp.get('time_ms', 0)
+                        if new > 0 and ms > 0:
+                            PHONE.note('reading', new, new * 1000.0 / ms)
+                    d = (obj.get('choices') or [{}])[0].get('delta') or {}
+                    if pp and strip_progress:
+                        del obj['prompt_progress']
+                        ch = (obj.get('choices') or [{}])[0]
+                        if not (d or ch.get('finish_reason') or obj.get('timings')):
+                            continue   # a progress-only event: the client never asked for it
+                        ev = b'data: ' + json.dumps(obj, ensure_ascii=False).encode()
+                    out += ev + b'\n\n'
                     p = 'thinking' if d.get('reasoning_content') else 'writing' if d.get('content') or d.get('tool_calls') else None
                     if p:
                         n += 1
@@ -333,8 +354,11 @@ class H(http.server.BaseHTTPRequestHandler):
                             PHONE.note(phase, n, (n - 1) / (now - t_first) if now > t_first else 0)
             if len(tail) < 8 << 20:
                 tail += chunk
-            self.wfile.write(b'%x\r\n%s\r\n' % (len(chunk), chunk))
-            self.wfile.flush()
+            if out:
+                self.wfile.write(b'%x\r\n%s\r\n' % (len(out), out))
+                self.wfile.flush()
+        if buf:   # a last event without its blank line
+            self.wfile.write(b'%x\r\n%s\r\n' % (len(buf), buf))
         self.wfile.write(b'0\r\n\r\n')
         self.wfile.flush()
         c.close()
@@ -365,7 +389,12 @@ class H(http.server.BaseHTTPRequestHandler):
             del body['chat_template_kwargs']
         with LOCK:
             kept = restore_reasoning(body.get('messages') or []) if KEEP_REASONING else 0
-            if kept or add_effort:
+            # the phone shows the end-to-end reading speed from the server's prompt_progress events; ask for them when the
+            # client didn't, and strip them from what it gets back
+            want_progress = bool(PHONE.ip and body.get('stream') and not body.get('return_progress'))
+            if want_progress:
+                body['return_progress'] = True
+            if kept or add_effort or want_progress:
                 raw = json.dumps(body).encode()
             t0 = time.time()
             PHONE.note('reading', 0)
@@ -374,7 +403,7 @@ class H(http.server.BaseHTTPRequestHandler):
             except Exception as e:  # the cache must never break a request: fall through cold
                 what = f'cache error, cold: {e!r}'
             t_prep = time.time() - t0
-            tail = self.relay(raw, watch=True)
+            tail = self.relay(raw, watch=True, strip_progress=want_progress)
             State.msgs = body.get('messages')
             State.reply = parse_reply(tail)
             if KEEP_REASONING and State.reply and State.reply.get('reasoning_content'):

@@ -221,12 +221,16 @@ struct ContentView: View {
         case .ready:
             return holding ? [held, chat, cable] : [chat, layers, cable]
         case .readingTogether:
-            let read = tailTokens >= readStartTokens ? Double(tailTokens - readStartTokens) : 0
-            return [Stat(value: "\(Int(tailTokS.rounded()))", label: "tokens a second here", lit: true),
-                    Stat(value: count(read), label: "read together", lit: false),
-                    cable]
+            // the headline number is the whole prompt read, end to end (the server's own count, sent by the Mac's proxy: new
+            // tokens over the server's prefill time). tailTokS is only this phone's 24 layers per chunk and overstates the
+            // combined speed, so it is labeled as such and kept second.
+            return [Stat(value: macN2 > 0 ? "\(Int(macN2.rounded()))" : "–", label: "tokens a second, Mac + iPhone", lit: true),
+                    Stat(value: count(macN1), label: "tokens read", lit: false),
+                    Stat(value: tailTokS > 0 ? "\(Int(tailTokS.rounded()))" : "–", label: "tok/s on this iPhone's layers only", lit: false)]
         case .readingAlone:
-            return [Stat(value: "\(since)", unit: "s", label: "reading", lit: false), holding ? held : layers, cable]
+            return [macN2 > 0 ? Stat(value: "\(Int(macN2.rounded()))", label: "tokens a second", lit: false)
+                              : Stat(value: "\(since)", unit: "s", label: "reading", lit: false),
+                    holding ? held : layers, cable]
         case .writing:
             return [Stat(value: count(macN1), label: macPhase == "thinking" ? "tokens of thinking" : "tokens written", lit: true),
                     Stat(value: writeRate > 0 ? "\(Int(writeRate.rounded()))" : "–", label: "tokens a second", lit: false),
@@ -737,7 +741,7 @@ struct ContentView: View {
             let ph = c < 3 ? "" : c < 7 ? "starting" : c < 11 ? "ready" : c < 17 ? "reading" : c < 22 ? "writing" : "done"
             let acts = activations + (ph == "ready" && macPhase == "starting" ? 1 : 0)
             let wrote = ph == "writing" ? (c - 17) * 24 : ph == "done" ? 120 : 0
-            applyMac(ph, n1: ph == "done" ? 6_864 : wrote, n2: ph == "writing" ? 24 : wrote, ctx: ph == "done" ? 7_054 : macCtx, activations: acts, activating: false)
+            applyMac(ph, n1: ph == "done" ? 6_864 : ph == "reading" ? (c - 11) * 157 : wrote, n2: ph == "writing" ? 24 : ph == "reading" ? 157 : wrote, ctx: ph == "done" ? 7_054 : macCtx, activations: acts, activating: false)
             if ph == "reading" {
                 tail.state = "Working"; lastTailChunks = readStartChunks + 1; tailTokS = 168 + Double.random(in: -6...6)
                 tailTokens = readStartTokens + UInt64((c - 11) * 170); rxRate = 2.4e8; txRate = 2.3e8
@@ -745,7 +749,7 @@ struct ContentView: View {
                 tail.state = ph.isEmpty ? "Ready" : "Connected"; rxRate = 0; txRate = 0
             }
         case "prefill":
-            applyMac("reading", n1: 0, n2: 0, ctx: 0, activations: activations, activating: false)
+            applyMac("reading", n1: 2_048, n2: 157, ctx: 0, activations: activations, activating: false)   // 157 tok/s: measured end to end at 16k, 2026-10-01
             tail.state = "Working"; lastTailChunks = readStartChunks + 1; tailTokS = 168 + Double.random(in: -6...6); rxRate = 2.4e8; txRate = 2.3e8
         case "context":
             applyMac("writing", n1: 212, n2: 0, ctx: 145_000, activations: activations, activating: false)
