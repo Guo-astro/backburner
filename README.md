@@ -138,6 +138,16 @@ You need an Apple Silicon Mac (tested: M4 Pro, 24 GB), an iPhone 15 Pro or newer
 10 Gb/s USB-C cable (the cable in the iPhone box is USB 2 and too slow). The iPhone app installs with a free Apple ID through
 AltStore, no developer account needed ([docs/INSTALL-IPHONE.md](docs/INSTALL-IPHONE.md)), or builds with Xcode.
 
+**One command** downloads the Mac engine and the models (~24 GB) and makes the phone's half. Safe to re-run:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/StayLameBro/backburner/main/install.sh | bash
+backburner phone   # once per phone: plug it in, open Backburner, copies the phone's half over the cable
+backburner         # OpenAI-compatible server at http://127.0.0.1:8080/v1
+```
+
+Or step by step:
+
 ```bash
 git clone --recursive https://github.com/StayLameBro/backburner && cd backburner
 
@@ -153,7 +163,7 @@ scripts/make-drafter.sh ~/Models/qwen38-27b-dflash2 ~/Models/dflash2-v2-q4km-sel
 #      DEVELOPMENT_TEAM=<your team id> UDID=<your iPhone's UDID> scripts/build-iphone.sh
 pip3 install coremltools      # serve.sh builds the phone's Neural Engine page model with it, once
 
-# 4. the phone's half of the model (layers 41-64, ~5.1 GB), copied over the cable
+# 4. the phone's half of the model (layers 41-64, ~6.9 GB), copied over the cable
 python3 scripts/split-gguf.py ~/Models/Qwen3.8-27B-IQ4_XS.gguf ~/Models/tail-iq4xs-L40-nohead.gguf -L 40
 scripts/phone-tail.sh L40
 
