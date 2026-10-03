@@ -134,8 +134,9 @@ The Mac's own Neural Engine is not used: it shares the Mac's memory bandwidth an
 
 ## Setup
 
-You need an Apple Silicon Mac (tested: M4 Pro, 24 GB), an iPhone 15 Pro or newer (tested: 17 Pro Max, 16 Pro Max), a 10 Gb/s
-USB-C cable (the cable in the iPhone box is USB 2 and too slow), and Xcode with an Apple developer team id for the app.
+You need an Apple Silicon Mac (tested: M4 Pro, 24 GB), an iPhone 15 Pro or newer (tested: 17 Pro Max, 16 Pro Max) and a
+10 Gb/s USB-C cable (the cable in the iPhone box is USB 2 and too slow). The iPhone app installs with a free Apple ID through
+AltStore, no developer account needed ([docs/INSTALL-IPHONE.md](docs/INSTALL-IPHONE.md)), or builds with Xcode.
 
 ```bash
 git clone --recursive https://github.com/StayLameBro/backburner && cd backburner
@@ -148,9 +149,8 @@ cmake --build llama.cpp/build-metal --target llama-server llama-quantize -j
 huggingface-cli download z-lab/Qwen3.8-27B-DFlash2 --local-dir ~/Models/qwen38-27b-dflash2
 scripts/make-drafter.sh ~/Models/qwen38-27b-dflash2 ~/Models/dflash2-v2-q4km-self16.gguf
 
-# 3. the iPhone app (phone plugged in and unlocked). Keep DEVELOPMENT_TEAM exported: serve.sh uses it to relaunch the app.
-export DEVELOPMENT_TEAM=<your team id>
-UDID=<your iPhone's UDID> scripts/build-iphone.sh
+# 3. the iPhone app: Backburner.ipa from the latest release via AltStore (docs/INSTALL-IPHONE.md), or build it with Xcode:
+#      DEVELOPMENT_TEAM=<your team id> UDID=<your iPhone's UDID> scripts/build-iphone.sh
 pip3 install coremltools      # serve.sh builds the phone's Neural Engine page model with it, once
 
 # 4. the phone's half of the model (layers 41-64, ~5.1 GB), copied over the cable
@@ -179,6 +179,12 @@ bench/turn-bench.py --config phone
 bench/session-bench.py --config stock|fork-mac|fork-phone   # an omp-shaped session, ~5 min each
 bench/long-bench.py                    # past 64k (long: cold reads to 128k)
 ```
+
+## Post your results
+
+Tried it? [Post your results](https://github.com/StayLameBro/backburner/issues/new?template=results.yml): your Mac, your
+phone(s) and the `turn-bench.py` output. Other Macs, other phones, iPads and two-device setups are the numbers this README
+doesn't have yet.
 
 ## Status
 

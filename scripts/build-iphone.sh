@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # build-iphone.sh - the iPhone app: llama.xcframework for iOS (Metal + ggml-rpc), the SME2 attention kernel, then the app.
 #   DEVELOPMENT_TEAM=<your Apple team id> [UDID=<iPhone UDID>] scripts/build-iphone.sh
+#   IPA=1 scripts/build-iphone.sh      # no team id: ios/build/Backburner.ipa for AltStore (docs/INSTALL-IPHONE.md)
 # With UDID set (and the phone wired and unlocked) it installs the app; otherwise it prints where the .app is.
 # Xcode 27 public cannot debug iOS 27.2 (DDI). It can still archive + devicectl install.
 set -euo pipefail
@@ -12,7 +13,12 @@ IOS="${ROOT}/ios/Backburner"
 FW="${IOS}/Frameworks"
 MIN_IOS="${MIN_IOS:-16.4}"
 JOBS="$(sysctl -n hw.ncpu 2>/dev/null || echo 8)"
-TEAM="${DEVELOPMENT_TEAM:?set DEVELOPMENT_TEAM to your Apple team id (Xcode > Settings > Accounts)}"
+IPA="${IPA:-0}"
+TEAM="${DEVELOPMENT_TEAM:-}"
+if [[ "${IPA}" != 1 && -z "${TEAM}" ]]; then
+  echo "set DEVELOPMENT_TEAM to your Apple team id (Xcode > Settings > Accounts), or IPA=1 for an unsigned AltStore build"
+  exit 1
+fi
 UDID="${UDID:-}"
 
 if [[ ! -d "${LLAMA}" ]]; then
@@ -157,14 +163,18 @@ xcrun -sdk iphoneos clang -c -O3 -isysroot "$(xcrun --sdk iphoneos --show-sdk-pa
 echo "archiving the app (no debugger, no DDI)"
 cd "${IOS}"
 mkdir -p "${ROOT}/ios/build"
+if [[ "${IPA}" == 1 ]]; then
+  # unsigned: AltStore signs it on the phone with the user's own Apple ID (and appends that team id to the bundle id)
+  SIGN_ARGS=(CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY= DEVELOPMENT_TEAM= PRODUCT_BUNDLE_IDENTIFIER=app.backburner.sidecar)
+else
+  SIGN_ARGS=(-allowProvisioningUpdates DEVELOPMENT_TEAM="${TEAM}" CODE_SIGN_STYLE=Automatic)
+fi
 xcodebuild \
   -project Sidecar.xcodeproj \
   -scheme Sidecar \
   -configuration Release \
   -destination "generic/platform=iOS" \
-  -allowProvisioningUpdates \
-  DEVELOPMENT_TEAM="${TEAM}" \
-  CODE_SIGN_STYLE=Automatic \
+  "${SIGN_ARGS[@]}" \
   -archivePath "${ROOT}/ios/build/Sidecar.xcarchive" \
   archive
 
@@ -175,6 +185,22 @@ if [[ ! -d "${APP}" ]]; then
   exit 1
 fi
 echo "app: ${APP}"
+
+if [[ "${IPA}" == 1 ]]; then
+  # Ad-hoc sign with the entitlements so AltStore can read them: without increased-memory-limit the phone gets ~3 GB, not ~6.
+  P="${ROOT}/ios/build/ipa"
+  rm -rf "${P}" && mkdir -p "${P}/Payload"
+  cp -R "${APP}" "${P}/Payload/"
+  for f in "${P}"/Payload/Sidecar.app/Frameworks/*.framework; do codesign -f -s - "${f}"; done
+  codesign -f -s - --entitlements "${IOS}/Sidecar/Sidecar.entitlements" "${P}/Payload/Sidecar.app"
+  codesign -d --entitlements - "${P}/Payload/Sidecar.app" 2>/dev/null | grep -q increased-memory-limit \
+    || { echo "IPA is missing the increased-memory-limit entitlement"; exit 1; }
+  rm -f "${ROOT}/ios/build/Backburner.ipa"
+  (cd "${P}" && zip -qry "${ROOT}/ios/build/Backburner.ipa" Payload)
+  rm -rf "${P}"
+  echo "ipa: ${ROOT}/ios/build/Backburner.ipa ($(du -h "${ROOT}/ios/build/Backburner.ipa" | cut -f1)). Install: docs/INSTALL-IPHONE.md"
+  exit 0
+fi
 
 if [[ -n "${UDID}" ]] && xcrun devicectl device info details --device "${UDID}" >/dev/null 2>&1; then
   echo "installing onto ${UDID} (DDI may fail; install can still work)"

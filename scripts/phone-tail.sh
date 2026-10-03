@@ -43,7 +43,8 @@ echo "phone $IP: tail L=$HAVE -> L=$WANT ($(du -h "$TAIL" | cut -f1))"
 python3 scripts/phone-push.py "$IP" "$TAIL" tail.gguf || exit 1
 UDID=$(ioreg -p IOUSB -w 0 -l | sed -n 's/.*"kUSBSerialNumberString" = "\(00008[0-9A-F]*\)".*/\1/p' | head -1)
 UDID=${UDID:0:8}-${UDID:8}
-perl -e 'alarm 30; exec @ARGV' xcrun devicectl device process launch --terminate-existing --device "$UDID" "${BUNDLE_ID:-app.backburner.${DEVELOPMENT_TEAM:-}}" >/dev/null 2>&1 \
+BID=$(scripts/bundle-id.sh "$UDID") || exit 2
+perl -e 'alarm 30; exec @ARGV' xcrun devicectl device process launch --terminate-existing --device "$UDID" "$BID" >/dev/null 2>&1 \
   || { echo "relaunch failed: unlock the phone, reopen Backburner, then run: scripts/phone-tail.sh (no args) to check"; exit 2; }
 for _ in $(seq 1 60); do nc -z -G 1 "$IP" 50060 >/dev/null 2>&1 && break; sleep 2; done
 sleep 3

@@ -10,8 +10,6 @@
 #   4. the split-prefill tail (:50060), up to TAIL_WAIT seconds (it loads a ~5 GB model)
 set -u
 TAIL_WAIT=${TAIL_WAIT:-45}
-# the app's bundle id (scripts/build-iphone.sh builds it as app.backburner.<your team id>)
-BUNDLE_ID=${BUNDLE_ID:-app.backburner.${DEVELOPMENT_TEAM:-}}
 say() { echo "phone-up: $*" >&2; }
 
 UDID=${UDID:-}
@@ -71,7 +69,8 @@ if [ "$VER" = ROUTE_ERROR ]; then
 fi
 if [ -z "$VER" ]; then
   say "Backburner HELLO did not answer on $NAME: trying an app relaunch"
-  out=$(xcrun devicectl device process launch --device "$UDID" --terminate-existing "$BUNDLE_ID" 2>&1)
+  BID=$("$(dirname "$0")/bundle-id.sh" "$UDID") || exit 1   # Xcode build (team id) or AltStore install
+  out=$(xcrun devicectl device process launch --device "$UDID" --terminate-existing "$BID" 2>&1)
   echo "$out" | grep -qiE 'locked' && { say "the phone is locked: unlock it and run again"; exit 1; }
   for _ in $(seq 1 20); do sleep 1; VER=$(hello "$IP"); [ -n "$VER" ] && break; done
   [ -n "$VER" ] || { say "Backburner didn't come up on $IP after a relaunch"; exit 1; }
