@@ -26,8 +26,15 @@ of prefill 2.4x faster; the A18 Pro works but helps less.
    AltServer asks for your Apple ID: that is how free sideloading signs apps. Use **AltStore 2.2 or newer**.
 3. **Developer Mode.** On the iPhone: Settings → Privacy & Security → Developer Mode → on, then restart when asked.
    If iOS says the developer isn't trusted: Settings → General → VPN & Device Management → your Apple ID → Trust.
-4. **Backburner.** Download `Backburner.ipa` from the [releases page](https://github.com/StayLameBro/backburner/releases)
-   onto the iPhone (or AirDrop it over), then in AltStore: My Apps → **+** → `Backburner.ipa`.
+4. **Backburner.** In AltStore: **Sources → +**, paste this source URL, then install Backburner from it. AltStore then tells you
+   when there's a new version:
+
+   ```
+   https://raw.githubusercontent.com/StayLameBro/backburner/main/altstore/source.json
+   ```
+
+   Or download `Backburner.ipa` from the [releases page](https://github.com/StayLameBro/backburner/releases) onto the iPhone
+   (or AirDrop it over), then in AltStore: My Apps → **+** → `Backburner.ipa`.
 5. **Check the memory budget.** Open Backburner, keep it in front, plug the phone into a 10 Gb/s USB-C port, and on the Mac:
 
    ```bash
@@ -64,3 +71,7 @@ IPA=1 scripts/build-iphone.sh    # -> ios/build/Backburner.ipa
 The IPA is unsigned except for an ad-hoc signature that carries the entitlements (`ios/Backburner/Sidecar/Sidecar.entitlements`),
 so AltStore can request increased-memory-limit when it signs the app with the user's Apple ID. The script stops if the
 entitlement is missing.
+
+For a new release: bump `MARKETING_VERSION` (and `CURRENT_PROJECT_VERSION`) in the Xcode project, build, attach the IPA to the
+GitHub release, then add a version to `altstore/source.json` with the same version and build numbers, the IPA's size in bytes
+and its download URL. AltStore refuses an install whose version or permissions don't match the source.

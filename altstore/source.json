@@ -1,0 +1,45 @@
+{
+  "name": "Backburner",
+  "subtitle": "Your iPhone helps your Mac run a 27B model",
+  "description": "The Backburner iPhone app: plug the phone into your Mac with a 10 Gb/s USB-C cable and it runs part of Qwen3.8-27B (faster prompt reading) and holds context the Mac has no room for. You also need the Mac side: https://github.com/StayLameBro/backburner",
+  "iconURL": "https://raw.githubusercontent.com/StayLameBro/backburner/main/docs/img/icon.png",
+  "website": "https://github.com/StayLameBro/backburner",
+  "tintColor": "#E8673A",
+  "nsfw": false,
+  "featuredApps": [
+    "app.backburner.sidecar"
+  ],
+  "apps": [
+    {
+      "name": "Backburner",
+      "bundleIdentifier": "app.backburner.sidecar",
+      "developerName": "StayLameBro",
+      "subtitle": "Your iPhone as a second GPU for your Mac",
+      "localizedDescription": "Plug the phone into your Mac with a 10 Gb/s USB-C cable, open Backburner and keep it in front. The Mac's server (scripts/serve.sh) then sends the phone layers 41-64 of each prompt batch and, past 64k tokens, the oldest part of the context.\n\nNeeds an iPhone 15 Pro or newer (the 17 Pro gets the most from it) and the Mac side from github.com/StayLameBro/backburner. Very early: please post your results in the repo.",
+      "iconURL": "https://raw.githubusercontent.com/StayLameBro/backburner/main/docs/img/icon.png",
+      "tintColor": "#E8673A",
+      "category": "developer",
+      "screenshots": [],
+      "versions": [
+        {
+          "version": "0.0.1",
+          "buildVersion": "1",
+          "date": "2026-10-03T01:44:29Z",
+          "localizedDescription": "First public build. Very early.",
+          "downloadURL": "https://github.com/StayLameBro/backburner/releases/download/v0.0.1/Backburner.ipa",
+          "size": 2725818,
+          "minOSVersion": "16.4"
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [
+          "com.apple.developer.kernel.increased-memory-limit"
+        ],
+        "privacy": {
+          "NSLocalNetworkUsageDescription": "Backburner lets the Mac find this phone on the USB cable."
+        }
+      }
+    }
+  ],
+  "news": []
+}

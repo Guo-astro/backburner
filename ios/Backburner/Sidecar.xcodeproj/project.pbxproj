@@ -15,6 +15,7 @@
 		A10100000000000000000006 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A10200000000000000000007 /* Metal.framework */; };
 		A10100000000000000000007 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A10200000000000000000008 /* Accelerate.framework */; };
 		A10100000000000000000009 /* CoreML.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1020000000000000000000C /* CoreML.framework */; };
+		A10B0000000000000000000A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10B0000000000000000000D /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -43,6 +44,7 @@
 		A1020000000000000000000C /* CoreML.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreML.framework; path = System/Library/Frameworks/CoreML.framework; sourceTree = SDKROOT; };
 		A10200000000000000000009 /* Sidecar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Sidecar.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1020000000000000000000A /* Sidecar-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Sidecar-Bridging-Header.h"; sourceTree = "<group>"; };
+		A10B0000000000000000000D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -78,6 +80,7 @@
 				A10200000000000000000004 /* RPCBridge.h */,
 				A1020000000000000000000A /* Sidecar-Bridging-Header.h */,
 				A10200000000000000000005 /* Info.plist */,
+				A10B0000000000000000000D /* Assets.xcassets */,
 			);
 			path = Sidecar;
 			sourceTree = "<group>";
@@ -103,6 +106,17 @@
 		};
 /* End PBXGroup section */
 
+/* Begin PBXResourcesBuildPhase section */
+		A10B00000000000000000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10B0000000000000000000A /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXNativeTarget section */
 		A10600000000000000000001 /* Sidecar */ = {
 			isa = PBXNativeTarget;
@@ -111,6 +125,7 @@
 				A10700000000000000000001 /* Sources */,
 				A10400000000000000000001 /* Frameworks */,
 				A10300000000000000000001 /* Embed Frameworks */,
+				A10B00000000000000000001 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -205,6 +220,7 @@
 		A10900000000000000000003 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sidecar/Sidecar.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -223,7 +239,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 0.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "app.backburner.$(DEVELOPMENT_TEAM)";
 				PRODUCT_NAME = Sidecar;
 				SUPPORTED_PLATFORMS = "iphoneos";
@@ -237,6 +253,7 @@
 		A10900000000000000000004 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sidecar/Sidecar.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -255,7 +272,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 0.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "app.backburner.$(DEVELOPMENT_TEAM)";
 				PRODUCT_NAME = Sidecar;
 				SUPPORTED_PLATFORMS = "iphoneos";
