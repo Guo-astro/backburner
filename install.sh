@@ -61,18 +61,25 @@ cd "$DIR"
 
 # 3. the Mac engine
 BIN=llama.cpp/build-metal/bin
-if [ ! -x "$BIN/llama-server" ] || [ ! -x "$BIN/llama-quantize" ]; then
+# a downloaded engine is replaced when a newer release has one (`backburner update`); it remembers which release it came from
+# in $BIN/.release-url. An engine built here from source (BUILD=1: build-metal/CMakeCache.txt) is never replaced.
+URL=""
+if [ "${BUILD:-0}" != 1 ] && [ ! -f llama.cpp/build-metal/CMakeCache.txt ]; then
+  URL=$(asset_url backburner-mac-arm64.tar.gz) || true
+fi
+if [ ! -x "$BIN/llama-server" ] || [ ! -x "$BIN/llama-quantize" ] || \
+   { [ -n "$URL" ] && [ "$(cat "$BIN/.release-url" 2>/dev/null)" != "$URL" ]; }; then
   mkdir -p "$BIN"
-  if [ "${BUILD:-0}" = 1 ]; then
+  if [ "${BUILD:-0}" = 1 ] || [ -f llama.cpp/build-metal/CMakeCache.txt ]; then
     say "building the Mac engine from source (~10 min)"
     cmake -S llama.cpp -B llama.cpp/build-metal -DCMAKE_BUILD_TYPE=Release
     cmake --build llama.cpp/build-metal --target llama-server llama-quantize -j
   else
-    say "downloading the Mac engine"
-    URL=$(asset_url backburner-mac-arm64.tar.gz) || true
-    [ -n "${URL:-}" ] || die "no prebuilt Mac engine in the releases yet: re-run with BUILD=1"
+    [ -n "$URL" ] || die "no prebuilt Mac engine in the releases yet: re-run with BUILD=1"
+    say "downloading the Mac engine ($(basename "$(dirname "$URL")"))"
     curl -fsSL "$URL" | tar -xz -C "$BIN"
-    xattr -dr com.apple.quarantine "$BIN" 2>/dev/null || true
+    /usr/bin/xattr -dr com.apple.quarantine "$BIN" 2>/dev/null || true
+    echo "$URL" > "$BIN/.release-url"
   fi
 fi
 "$BIN/llama-server" --version 2>&1 | grep -q version || die "$BIN/llama-server does not run on this Mac: re-run with BUILD=1"
