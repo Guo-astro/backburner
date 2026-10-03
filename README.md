@@ -186,10 +186,16 @@ Tried it? [Post your results](https://github.com/StayLameBro/backburner/issues/n
 phone(s) and the `turn-bench.py` output. Other Macs, other phones, iPads and two-device setups are the numbers this README
 doesn't have yet.
 
+## Contributing
+
+Pull requests are welcome: new devices, fixes, kernels, docs. [CONTRIBUTING.md](CONTRIBUTING.md) has what every
+change needs: same answers, measured speed, and the Mac alone still working.
+
 ## Status
 
 Pre-release. Next: the phone's layers seeing the keys it holds (split prefill past 64k), a second phone in the prefill chain,
 an App Store build, and upstreaming what makes sense to llama.cpp.
 Built with a lot of help from Claude Opus 5.5.
 
-MIT license (llama.cpp keeps its own MIT license).
+MIT license (llama.cpp keeps its own MIT license). Created by [StayLameBro](https://github.com/StayLameBro). Forks are
+welcome; if you start a separate project from it, please give it a different name and link back here.
