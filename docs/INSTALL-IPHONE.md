@@ -1,4 +1,4 @@
-# Installing the iPhone app
+# Installing the iPhone (or iPad) app
 
 Two ways. Both give the same app; the Mac scripts find it on the phone either way (`scripts/bundle-id.sh`).
 
@@ -8,8 +8,13 @@ Two ways. Both give the same app; the Mac scripts find it on the phone either wa
 | Build anything for the phone | no | yes (`scripts/build-iphone.sh`, ~10 min) |
 | Re-sign | every 7 days (AltStore does it) | every 7 days on a free team, yearly on a paid one |
 
-You need an iPhone 15 Pro or newer. The A19 Pro (iPhone 17 Pro / Pro Max) has the GPU matrix units that make the phone's half
-of prefill 2.4x faster; the A18 Pro works but helps less.
+You need an iPhone 15 Pro or newer, or an iPad with an M-series chip (M1 or newer). The A19 Pro (iPhone 17 Pro / Pro Max)
+has the GPU matrix units that make the phone's half of prefill 2.4x faster; the A18 Pro works but helps less.
+
+**iPads** install the same app (v0.0.2 and newer) and every step below is the same. iPads are **not tested yet**: we
+don't know how much memory iPadOS gives the app (step 5 prints it), or how fast an M-series iPad runs its layers. If you
+try one, please [post your results](https://github.com/StayLameBro/backburner/issues/new?template=results.yml), including
+the `app budget` line. The app runs full screen on iPad (no Split View), because it has to stay in front while the Mac uses it.
 
 ## With AltStore (no developer account)
 

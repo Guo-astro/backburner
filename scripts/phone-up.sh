@@ -18,7 +18,7 @@ if [ -z "$UDID" ]; then
   raw=$(ioreg -p IOUSB -w 0 -l 2>/dev/null | sed -n 's/.*"kUSBSerialNumberString" = "\(00008[0-9A-F]*\)".*/\1/p' | head -1)
   if [ ${#raw} -eq 24 ]; then UDID=${raw:0:8}-${raw:8}; fi
 fi
-[ -n "$UDID" ] || { say "no iPhone on the USB cable (a phone on Wi-Fi doesn't count)"; exit 1; }
+[ -n "$UDID" ] || { say "no iPhone or iPad on the USB cable (one on Wi-Fi doesn't count)"; exit 1; }
 NAME="wired iPhone"
 
 find_ip() {

@@ -1,6 +1,14 @@
 import SwiftUI
 import UIKit
 
+// "iPad" or "iPhone", for the text on screen (the hardware model name, e.g. "iPad16,3", not UIDevice: no main actor needed)
+private let device: String = {
+    var u = utsname()
+    uname(&u)
+    let model = withUnsafeBytes(of: &u.machine) { String(decoding: $0.prefix(while: { $0 != 0 }), as: UTF8.self) }
+    return model.hasPrefix("iPad") ? "iPad" : "iPhone"
+}()
+
 // One line per service the Mac can use, with what it is doing and when the Mac last used it.
 private struct Service: Identifiable {
     let id: String        // short name
@@ -161,30 +169,30 @@ struct ContentView: View {
     private var subline: String {
         switch mode {
         case .loading:
-            return "This iPhone is opening its part of the model, the last \(phoneLayers) layers."
+            return "This \(device) is opening its part of the model, the last \(phoneLayers) layers."
         case .noCable:
             return "Use a USB-C cable that carries data. A 10 Gb/s cable runs at full speed. The charge-only cable from the box won't work."
         case .waiting:
-            return "Start the server on your Mac. This iPhone gets its \(phoneLayers) layers ready as soon as the server is up."
+            return "Start the server on your Mac. This \(device) gets its \(phoneLayers) layers ready as soon as the server is up."
         case .starting:
-            return "Your Mac is loading the model. That takes about a minute, then this iPhone gets ready."
+            return "Your Mac is loading the model. That takes about a minute, then this \(device) gets ready."
         case .activating:
-            return "Moving this iPhone's \(phoneLayers) layers into GPU memory, so it can start on your first long prompt right away."
+            return "Moving this \(device)'s \(phoneLayers) layers into GPU memory, so it can start on your first long prompt right away."
         case .ready:
             if holding {
-                return "Your Mac keeps the newest 64k tokens of the chat. This iPhone keeps the \(count(Double(heldKeys))) before them and answers your Mac's questions about them."
+                return "Your Mac keeps the newest 64k tokens of the chat. This \(device) keeps the \(count(Double(heldKeys))) before them and answers your Mac's questions about them."
             }
             if macPhase == "done" && macN1 + macN2 > 0 {
-                return "Last turn: read \(Int(macN1)) tokens, wrote \(Int(macN2)). Send a long prompt and this iPhone reads it with your Mac."
+                return "Last turn: read \(Int(macN1)) tokens, wrote \(Int(macN2)). Send a long prompt and this \(device) reads it with your Mac."
             }
-            return "Send a long prompt and your Mac runs layers \(macRange) while this iPhone runs \(phoneRange), at the same time."
+            return "Send a long prompt and your Mac runs layers \(macRange) while this \(device) runs \(phoneRange), at the same time."
         case .readingTogether:
-            return "Your Mac runs layers \(macRange) while this iPhone runs \(phoneRange), at the same time. Every 2,048 tokens they pause for a moment to save their place."
+            return "Your Mac runs layers \(macRange) while this \(device) runs \(phoneRange), at the same time. Every 2,048 tokens they pause for a moment to save their place."
         case .readingAlone:
-            return "Short prompts are quicker on your Mac alone. This iPhone joins in from 512 tokens."
+            return "Short prompts are quicker on your Mac alone. This \(device) joins in from 512 tokens."
         case .writing:
-            if holding { return "For every token, your Mac asks this iPhone about the oldest \(count(Double(heldKeys))) tokens of the chat." }
-            return "Writing goes one token at a time, and that's fastest on your Mac alone. This iPhone waits for the next long prompt."
+            if holding { return "For every token, your Mac asks this \(device) about the oldest \(count(Double(heldKeys))) tokens of the chat." }
+            return "Writing goes one token at a time, and that's fastest on your Mac alone. This \(device) waits for the next long prompt."
         }
     }
 
@@ -224,9 +232,9 @@ struct ContentView: View {
             // the headline number is the whole prompt read, end to end (the server's own count, sent by the Mac's proxy: new
             // tokens over the server's prefill time). tailTokS is only this phone's 24 layers per chunk and overstates the
             // combined speed, so it is labeled as such and kept second.
-            return [Stat(value: macN2 > 0 ? "\(Int(macN2.rounded()))" : "–", label: "tokens a second, Mac + iPhone", lit: true),
+            return [Stat(value: macN2 > 0 ? "\(Int(macN2.rounded()))" : "–", label: "tokens a second, Mac + \(device)", lit: true),
                     Stat(value: count(macN1), label: "tokens read", lit: false),
-                    Stat(value: tailTokS > 0 ? "\(Int(tailTokS.rounded()))" : "–", label: "tok/s on this iPhone's layers only", lit: false)]
+                    Stat(value: tailTokS > 0 ? "\(Int(tailTokS.rounded()))" : "–", label: "tok/s on this \(device)'s layers only", lit: false)]
         case .readingAlone:
             return [macN2 > 0 ? Stat(value: "\(Int(macN2.rounded()))", label: "tokens a second", lit: false)
                               : Stat(value: "\(since)", unit: "s", label: "reading", lit: false),
@@ -298,7 +306,7 @@ struct ContentView: View {
                         HStack(alignment: .top, spacing: 14) {
                             VStack(alignment: .leading, spacing: 0) {
                                 Text("Mac").frame(height: CGFloat(tailFirst) * 5, alignment: .center)
-                                Text("iPhone")
+                                Text(device)
                                     .foregroundStyle([.readingTogether, .loading, .activating].contains(mode) ? glow : mid)
                                     .frame(height: CGFloat(phoneLayers) * 5, alignment: .center)
                             }
@@ -367,7 +375,7 @@ struct ContentView: View {
                             note("It's running hot, so it has slowed down. A fan or a cool surface brings the speed back.", glow)
                         }
                         if advertiser.failed {
-                            note("Your Mac can't find this iPhone by name. Allow Local Network for \(Self.appName) in Settings.", amber)
+                            note("Your Mac can't find this \(device) by name. Allow Local Network for \(Self.appName) in Settings.", amber)
                         }
                     }
                     .padding(.top, 18)
@@ -1030,10 +1038,10 @@ private struct LayerStack: View {
                 }
             }
         }
-        .accessibilityLabel(phoneEmpty ? "The model's 64 layers. The last \(64 - firstPhoneLayer) will run on this iPhone."
+        .accessibilityLabel(phoneEmpty ? "The model's 64 layers. The last \(64 - firstPhoneLayer) will run on this \(device)."
                             : loading ? "Loading the last \(64 - firstPhoneLayer) layers of the model"
-                            : prefill ? "This iPhone runs the last \(64 - firstPhoneLayer) of the model's 64 layers"
-                                      : "The model's 64 layers. The last \(64 - firstPhoneLayer) run on this iPhone.")
+                            : prefill ? "This \(device) runs the last \(64 - firstPhoneLayer) of the model's 64 layers"
+                                      : "The model's 64 layers. The last \(64 - firstPhoneLayer) run on this \(device).")
     }
 }
 
@@ -1113,7 +1121,7 @@ private struct ConversationBar: View {
             GeometryReader { g in
                 HStack(alignment: .top, spacing: 0) {
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("On this iPhone").font(.system(size: 16, weight: .semibold)).foregroundStyle(light)
+                        Text("On this \(device)").font(.system(size: 16, weight: .semibold)).foregroundStyle(light)
                         Text(count(phoneTokens)).font(.system(size: 14).monospacedDigit()).foregroundStyle(mid).numericTransition()
                     }
                     .frame(width: max(120, g.size.width * f), alignment: .leading)

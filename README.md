@@ -14,7 +14,8 @@ The engine is a llama.cpp fork (`llama.cpp/`, [StayLameBro/backburner-llama.cpp]
 with its own Mac kernels (SME2, Metal fusions, DFlash2 speculative decoding). Those speed things up on the Mac alone too; the
 numbers below keep the two apart.
 
-Tested on a MacBook Pro M4 Pro (24 GB) with iPhone 17 Pro Max (A19 Pro) and iPhone 16 Pro Max (A18 Pro) phones.
+Tested on a MacBook Pro M4 Pro (24 GB) with iPhone 17 Pro Max (A19 Pro) and iPhone 16 Pro Max (A18 Pro) phones. The app also
+installs on iPads with an M-series chip since v0.0.2; that is untested so far, so please post your results.
 
 ![Seconds of waiting for each file your agent reads](docs/img/wait-per-file.png)
 
@@ -134,9 +135,10 @@ The Mac's own Neural Engine is not used: it shares the Mac's memory bandwidth an
 
 ## Setup
 
-You need an Apple Silicon Mac (tested: M4 Pro, 24 GB), an iPhone 15 Pro or newer (tested: 17 Pro Max, 16 Pro Max) and a
-10 Gb/s USB-C cable (the cable in the iPhone box is USB 2 and too slow). The iPhone app installs with a free Apple ID through
-AltStore, no developer account needed ([docs/INSTALL-IPHONE.md](docs/INSTALL-IPHONE.md)), or builds with Xcode.
+You need an Apple Silicon Mac (tested: M4 Pro, 24 GB), an iPhone 15 Pro or newer (tested: 17 Pro Max, 16 Pro Max) or an
+M-series iPad (untested), and a 10 Gb/s USB-C cable (the cable in the iPhone box is USB 2 and too slow). The app installs
+with a free Apple ID through AltStore, no developer account needed
+([docs/INSTALL-IPHONE.md](docs/INSTALL-IPHONE.md)), or builds with Xcode.
 
 **One command** downloads the Mac engine and the models (~24 GB) and makes the phone's half. Safe to re-run:
 

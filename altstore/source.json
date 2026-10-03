@@ -15,12 +15,21 @@
       "bundleIdentifier": "app.backburner.sidecar",
       "developerName": "StayLameBro",
       "subtitle": "Your iPhone as a second GPU for your Mac",
-      "localizedDescription": "Plug the phone into your Mac with a 10 Gb/s USB-C cable, open Backburner and keep it in front. The Mac's server (scripts/serve.sh) then sends the phone layers 41-64 of each prompt batch and, past 64k tokens, the oldest part of the context.\n\nNeeds an iPhone 15 Pro or newer (the 17 Pro gets the most from it) and the Mac side from github.com/StayLameBro/backburner. Very early: please post your results in the repo.",
+      "localizedDescription": "Plug the phone into your Mac with a 10 Gb/s USB-C cable, open Backburner and keep it in front. The Mac's server (scripts/serve.sh) then sends the phone layers 41-64 of each prompt batch and, past 64k tokens, the oldest part of the context.\n\nNeeds an iPhone 15 Pro or newer (the 17 Pro gets the most from it) or an M-series iPad (untested so far) and the Mac side from github.com/StayLameBro/backburner. Very early: please post your results in the repo.",
       "iconURL": "https://raw.githubusercontent.com/StayLameBro/backburner/main/docs/img/icon.png",
       "tintColor": "#E8673A",
       "category": "developer",
       "screenshots": [],
       "versions": [
+        {
+          "version": "0.0.2",
+          "buildVersion": "2",
+          "date": "2026-10-03T02:43:24Z",
+          "localizedDescription": "Installs on iPads too (M-series; untested, please post results). The app's text says iPad on an iPad, and it runs full screen there.",
+          "downloadURL": "https://github.com/StayLameBro/backburner/releases/download/v0.0.2/Backburner.ipa",
+          "size": 2727191,
+          "minOSVersion": "16.4"
+        },
         {
           "version": "0.0.1",
           "buildVersion": "1",
