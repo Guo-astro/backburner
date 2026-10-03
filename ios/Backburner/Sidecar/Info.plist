@@ -33,12 +33,7 @@
 		<true/>
 	</dict>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Backburner lets the Mac find this phone on the USB cable.</string>
-	<key>NSBonjourServices</key>
-	<array>
-		<string>_ggml-rpc._tcp</string>
-		<string>_infernet-rpc._tcp</string>
-	</array>
+	<string>Backburner talks to your Mac over the USB cable, and over Wi-Fi only after you pair them over the cable.</string>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<!-- iPad: full screen only (no Split View or Stage Manager tiling), so the app stays in front while the Mac uses it -->

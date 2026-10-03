@@ -133,6 +133,13 @@ The Mac's own Neural Engine is not used: it shares the Mac's memory bandwidth an
   phone) but not yet tested end to end.
 - One request at a time (`-np 1`).
 
+## Security
+
+Over the USB cable, the phone app answers the Mac and nothing else. Over Wi-Fi it answers only a Mac you paired over the
+cable, through an encrypted, authenticated tunnel ([docs/WIFI.md](docs/WIFI.md)). Nothing is advertised on the network.
+Before 0.0.3 the app accepted connections over Wi-Fi too: update the app, or keep the phone's Wi-Fi off while Backburner is
+open. Report problems privately (Security → Report a vulnerability): [SECURITY.md](SECURITY.md).
+
 ## Setup
 
 You need an Apple Silicon Mac (tested: M4 Pro, 24 GB), an iPhone 15 Pro or newer (tested: 17 Pro Max, 16 Pro Max) or an
