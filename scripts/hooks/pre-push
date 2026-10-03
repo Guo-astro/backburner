@@ -1,0 +1,4 @@
+#!/bin/bash
+# pre-push - installed by scripts/install-hooks.sh (source: scripts/hooks/). Runs check-sensitive.py; see its --help.
+HOOKS=$(cd "$(dirname "$0")" && pwd)
+exec python3 "$HOOKS/check-sensitive.py" --push
