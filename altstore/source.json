@@ -22,6 +22,15 @@
       "screenshots": [],
       "versions": [
         {
+          "version": "0.0.4",
+          "buildVersion": "4",
+          "date": "2026-10-03T19:04:25Z",
+          "localizedDescription": "The phone and the Mac now speak the same protocol version, so saving a session while the phone holds part of the conversation works. Keep the app in front past 64k (Guided Access helps: see the install guide).",
+          "downloadURL": "https://github.com/StayLameBro/backburner/releases/download/v0.0.4/Backburner.ipa",
+          "size": 2747105,
+          "minOSVersion": "16.4"
+        },
+        {
           "version": "0.0.3",
           "buildVersion": "3",
           "date": "2026-10-03T15:40:15Z",

@@ -3,7 +3,7 @@
 Plug your iPhone into your MacBook with a 10 Gb/s USB-C cable and it helps run Qwen3.8-27B locally:
 
 - **Faster prefill (up to 64k context).** For every batch of prompt tokens the Mac runs layers 1-40 and the iPhone runs 41-64
-  on its GPU, pipelined. Your agent waits less every time it reads a file or a tool result: 29-44% faster prefill at 16k-48k.
+  on its GPU, pipelined. Your agent waits less every time it reads a file or a tool result of more than ~512 tokens: 29-44% faster prefill at 16k-48k.
 - **More context.** A 24 GB Mac fits 64k tokens of 8-bit context next to the model. The iPhone holds the oldest part past that
   and computes attention over it: its GPU during prefill, its GPU and Neural Engine while writing. The server sizes the total
   from the phone's free memory at startup (196k-229k tokens at 8-bit on an iPhone 17 Pro Max). Tested end to end to 128k at
@@ -128,9 +128,14 @@ The Mac's own Neural Engine is not used: it shares the Mac's memory bandwidth an
   next step. It helps most at 64k-100k; deeper, the phone's GPU is already busy about two thirds of each step with old keys
   (140k), so a second phone is the bigger win there.
 - **Writing speed is the Mac's below 64k.** The phone only joins decoding past 64k (attention over the old keys).
-- **A failure turns the phone off for 60 s**; the batch reruns on the Mac and the server log says so.
-- **Saving a session while the phone holds keys** (past 64k) is implemented for the current app (the rows come back from the
-  phone) but not yet tested end to end.
+- **During a read, a phone failure turns the phone off for 60 s**; the batch reruns on the Mac and the server log says so.
+- **Past 64k, keep Backburner open and in front on the phone.** The phone then holds the oldest part of the conversation, and
+  the Mac no longer has it. If the phone stops answering for 15 s (the app sent to the background, the screen locked, the cable
+  pulled), the server stops with a message saying so; reopen the app and restart the server. The server log warns after 5 s.
+  iOS doesn't let an iPhone app use its GPU in the background, so to keep the screen from being locked by accident, use
+  Guided Access ([docs/INSTALL-IPHONE.md](docs/INSTALL-IPHONE.md#keeping-it-in-front)).
+- **Saving a session while the phone holds keys** (past 64k) needs app 0.0.4 or later (the rows come back from the phone).
+  Tested with the Mac's loopback phone, not yet on a real phone.
 - One request at a time (`-np 1`).
 
 ## Security

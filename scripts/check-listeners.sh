@@ -7,12 +7,14 @@
 #   - the app advertises itself (Bonjour: NetService, NSBonjourServices) or a Swift file binds 0.0.0.0
 #   - the control port's fetch / path checks (fetch_url_ok, safe_doc_path) are gone
 #   - the Wi-Fi tunnel accepts a connection without its handshake
+#   - the app's and the Mac's copies of phone-attn.h differ
 set -uo pipefail
 cd "$(dirname "$0")/.."
 fail=0
 bad() { echo "check-listeners: $*" >&2; fail=1; }
 
-SERVERS=(ios/Backburner/Sidecar/RPCBridge.mm phone-attn/phone-attn.h llama.cpp/tools/split-prefill/tail-server.h)
+SERVERS=(ios/Backburner/Sidecar/RPCBridge.mm phone-attn/phone-attn.h llama.cpp/ggml/src/ggml-metal/phone-attn.h
+         llama.cpp/tools/split-prefill/tail-server.h)
 for f in "${SERVERS[@]}"; do
   [ -f "$f" ] || { bad "$f is missing"; continue; }
   # every accept( call (not common_sampler_accept etc.) needs a filter within the next 12 lines
@@ -30,6 +32,8 @@ grep -rnE 'NetService\(|NWListener\(.*service|DNSServiceRegister' ios/Backburner
 grep -q 'NSBonjourServices' ios/Backburner/Sidecar/Info.plist && bad "Info.plist: NSBonjourServices is back"
 grep -rn '"0\.0\.0\.0"' ios/Backburner/Sidecar --include='*.swift' >/dev/null && bad "a Swift file binds 0.0.0.0"
 
+cmp -s phone-attn/phone-attn.h llama.cpp/ggml/src/ggml-metal/phone-attn.h || \
+  bad "phone-attn/phone-attn.h and llama.cpp/ggml/src/ggml-metal/phone-attn.h differ: the app and the Mac must speak the same protocol"
 grep -q 'fetch_url_ok' ios/Backburner/Sidecar/RPCBridge.mm || bad "RPCBridge.mm: fetch no longer checks its URL (bb::fetch_url_ok)"
 grep -q 'safe_doc_path' ios/Backburner/Sidecar/RPCBridge.mm || bad "RPCBridge.mm: file arguments are no longer checked (bb::safe_doc_path)"
 
