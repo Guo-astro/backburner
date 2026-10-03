@@ -46,6 +46,10 @@ residual from A to B (2.6 MB per chunk, ~3 ms on 10 Gb/s).
 
 ## Hardware notes
 
+- Cable round trip, measured 2026-10-02 (iPhone 16 Pro Max, A18 Pro, USB-C): **96 us median, 183 us p90** for a 16-byte
+  request and reply through the app's phone-attn port (2,000 HELLOs on one connection, TCP_NODELAY). ICMP ping reads
+  ~0.5 ms, but that path is slower on iOS than the app's socket and doesn't represent it. So anything that syncs per layer
+  pays ~13 ms per forward pass at 128 syncs (two per layer): fine for prefill chunks, too much for per-layer decode splits.
 - Each phone on its own USB-C port, each with a 10 Gb/s data cable.
 - Two A19 Pro phones on hand; the A18 Pro also works (slower: L=52 split measured).
 - Both need Sidecar open and unlocked; both heat up, so a fan helps long runs.
