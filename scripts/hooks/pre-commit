@@ -1,0 +1,7 @@
+#!/bin/bash
+# pre-commit - installed by scripts/install-hooks.sh (source: scripts/hooks/). Runs check-sensitive.py; see its --help.
+HOOKS=$(cd "$(dirname "$0")" && pwd)
+python3 "$HOOKS/check-sensitive.py" --staged || exit 1
+# the phone app's network rules, when this checkout has them
+[ -x scripts/check-listeners.sh ] && { scripts/check-listeners.sh >/dev/null || exit 1; }
+exit 0

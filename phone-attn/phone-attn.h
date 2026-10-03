@@ -114,6 +114,31 @@ inline void tune_socket(int fd) {
 inline float h2f(uint16_t h) { __fp16 x; memcpy(&x, &h, 2); return (float) x; }
 inline uint16_t f2h(float f) { __fp16 x = (__fp16) f; uint16_t h; memcpy(&h, &x, 2); return h; }
 
+// Who may connect. The protocol has no authentication, so by default only this machine may (loopback: pa-tool tests);
+// PA_ALLOW_REMOTE=1 lifts that for a deliberate setup. The Backburner app replaces it with its USB-cable check
+// (set_accept_filter). Called after accept(), before anything is read; `why` says who it was and why.
+using accept_filter_fn = std::function<bool(int fd, std::string & why)>;
+inline bool accept_loopback_only(int fd, std::string & why) {
+    sockaddr_storage p = {};
+    socklen_t pl = sizeof p;
+    if (getpeername(fd, (sockaddr *) &p, &pl) != 0) { why = "no peer address"; return false; }
+    bool lo = false;
+    char ip[INET6_ADDRSTRLEN] = "?";
+    if (p.ss_family == AF_INET) {
+        const in_addr a = ((sockaddr_in *) &p)->sin_addr;
+        lo = (ntohl(a.s_addr) >> 24) == 127;
+        inet_ntop(AF_INET, &a, ip, sizeof ip);
+    } else if (p.ss_family == AF_INET6) {
+        const in6_addr & a = ((sockaddr_in6 *) &p)->sin6_addr;
+        lo = IN6_IS_ADDR_LOOPBACK(&a) || (IN6_IS_ADDR_V4MAPPED(&a) && a.s6_addr[12] == 127);
+        inet_ntop(AF_INET6, &a, ip, sizeof ip);
+    }
+    const char * e = getenv("PA_ALLOW_REMOTE");
+    if (lo || (e && atoi(e) != 0)) { why = std::string(ip) + (lo ? ": loopback" : ": PA_ALLOW_REMOTE"); return true; }
+    why = std::string(ip) + ": not loopback (PA_ALLOW_REMOTE=1 allows it)";
+    return false;
+}
+
 // ---------------------------------------------------------------- server
 struct status {
     std::mutex mu;
@@ -216,6 +241,9 @@ public:
     // the rest runs on the GPU / SME at the same time (A19: ANE 0.086 ms per 1k keys vs GPU q4_0 0.150, 2026-09-27)
     void set_page_engine(page_engine * pe) { ane_ = pe; }
 
+    // who may connect (default: loopback only, see accept_loopback_only)
+    void set_accept_filter(accept_filter_fn f) { accept_ok_ = std::move(f); }
+
     // Blocking accept loop. Returns an error string if the listener fails.
     std::string serve(int port) {
         int srv = ::socket(AF_INET, SOCK_STREAM, 0);
@@ -233,6 +261,12 @@ public:
                 if (errno != EINTR) { say(std::string("phone-attn accept: ") + strerror(errno) + " (retrying)"); ::usleep(100000); }
                 continue;
             }
+            std::string why;
+            if (!(accept_ok_ ? accept_ok_(fd, why) : accept_loopback_only(fd, why))) {
+                say("refused a connection from " + why);
+                ::close(fd);
+                continue;
+            }
             tune_socket(fd);
             session(fd);
             ::close(fd);
@@ -247,6 +281,7 @@ private:
     int n_thr_;
     engine * eng_;
     page_engine * ane_ = nullptr;
+    accept_filter_fn accept_ok_;
     config_req cfg_ = {};
     std::vector<std::vector<page>> pages_;      // per layer
     std::vector<uint32_t> n_;                   // keys held per layer

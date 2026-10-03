@@ -69,7 +69,6 @@ struct ContentView: View {
     @State private var savedBrightness: CGFloat = -1
     @State private var drift = CGSize.zero
 
-    @StateObject private var advertiser = RPCAdvertiser()
 
     private static var lastRx: UInt64 = 0
     private static var lastTx: UInt64 = 0
@@ -106,6 +105,7 @@ struct ContentView: View {
             startTail()
             SidecarRPC.startANEBench(port: 50061)
             SidecarRPC.startPhoneAttn(port: 50062)
+            WifiTunnel.startIfPaired()
             refresh()
             appearAt = Date()
         }
@@ -369,14 +369,9 @@ struct ContentView: View {
                     .transition(.opacity)
                 }
 
-                if hot || advertiser.failed {
+                if hot {
                     VStack(alignment: .leading, spacing: 10) {
-                        if hot {
-                            note("It's running hot, so it has slowed down. A fan or a cool surface brings the speed back.", glow)
-                        }
-                        if advertiser.failed {
-                            note("Your Mac can't find this \(device) by name. Allow Local Network for \(Self.appName) in Settings.", amber)
-                        }
+                        note("It's running hot, so it has slowed down. A fan or a cool surface brings the speed back.", glow)
                     }
                     .padding(.top, 18)
                     .transition(.opacity)
@@ -608,6 +603,7 @@ struct ContentView: View {
 
     private func refresh() {
         cable = SidecarRPC.cableAddress()
+        WifiTunnel.startIfPaired()   // after `pair` over the cable (scripts/phone-wifi.sh); it stops itself on `unpair`
         if machine.isEmpty { machine = SidecarRPC.deviceModel() }
         thermal = ProcessInfo.processInfo.thermalState
 
@@ -687,9 +683,6 @@ struct ContentView: View {
             if rpcBusy { rpc.lastUsed = now }
         }
 
-        if !cable.isEmpty {
-            advertiser.publish(port: rpcPort, model: machine, chip: chip, memBytes: memAvail, addr: cable)
-        }
         // what the Mac is doing
         let m = SidecarRPC.macStatus()
         if Self.demo.isEmpty { applyMac((m["phase"] as? String) ?? "", n1: (m["n1"] as? NSNumber)?.doubleValue ?? 0, n2: (m["n2"] as? NSNumber)?.doubleValue ?? 0,
@@ -793,7 +786,7 @@ struct ContentView: View {
         try? FileManager.default.createDirectory(at: cache, withIntermediateDirectories: true)
         let port = rpcPort
         DispatchQueue.global(qos: .userInitiated).async {
-            let err = SidecarRPC.start(host: "0.0.0.0", port: port, cacheDir: cache.path)
+            let err = SidecarRPC.start(host: "127.0.0.1", port: port, cacheDir: cache.path)
             DispatchQueue.main.async {
                 rpcRunning = false
                 rpcError = (err ?? "stopped") + ". Restarting."
@@ -816,45 +809,6 @@ struct ContentView: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 3) { startTail() }
             }
         }
-    }
-}
-
-final class RPCAdvertiser: NSObject, NetServiceDelegate, ObservableObject {
-    private var service: NetService?
-    private var lastTXT = ""
-    @Published private(set) var failed = false
-
-    func publish(port: Int32, model: String, chip: String, memBytes: UInt64, addr: String) {
-        let memBucket = (memBytes / (16 * 1024 * 1024)) * (16 * 1024 * 1024)
-        let txt: [String: Data] = [
-            "model": Data(model.utf8),
-            "chip": Data(chip.utf8),
-            "mem": Data(String(memBucket).utf8),
-            "addr": Data(addr.utf8),
-            "port": Data(String(port).utf8),
-        ]
-        let stamp = txt.keys.sorted().map { "\($0)=\(String(data: txt[$0] ?? Data(), encoding: .utf8) ?? "")" }.joined(separator: ";")
-        if service == nil {
-            let svc = NetService(domain: "local.", type: "_infernet-rpc._tcp.", name: "infernet", port: port)
-            svc.delegate = self
-            svc.setTXTRecord(NetService.data(fromTXTRecord: txt))
-            svc.publish()
-            service = svc
-            lastTXT = stamp
-            return
-        }
-        if stamp != lastTXT {
-            service?.setTXTRecord(NetService.data(fromTXTRecord: txt))
-            lastTXT = stamp
-        }
-    }
-
-    func netServiceDidPublish(_ sender: NetService) {
-        DispatchQueue.main.async { self.failed = false }
-    }
-
-    func netService(_ sender: NetService, didNotPublish errorDict: [String : NSNumber]) {
-        DispatchQueue.main.async { self.failed = true }
     }
 }
 

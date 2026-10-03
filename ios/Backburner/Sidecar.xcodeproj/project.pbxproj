@@ -10,6 +10,8 @@
 		A10100000000000000000001 /* SidecarApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200000000000000000001 /* SidecarApp.swift */; };
 		A10100000000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200000000000000000002 /* ContentView.swift */; };
 		A10100000000000000000003 /* RPCBridge.mm in Sources */ = {isa = PBXBuildFile; fileRef = A10200000000000000000003 /* RPCBridge.mm */; };
+		A10100000000000000000020 /* Tunnel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200000000000000000020 /* Tunnel.swift */; };
+		A10100000000000000000021 /* WifiTunnel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200000000000000000021 /* WifiTunnel.swift */; };
 		A10100000000000000000004 /* llama.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = A10200000000000000000006 /* llama.xcframework */; };
 		A10100000000000000000005 /* llama.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A10200000000000000000006 /* llama.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		A10100000000000000000006 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A10200000000000000000007 /* Metal.framework */; };
@@ -36,6 +38,9 @@
 		A10200000000000000000001 /* SidecarApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidecarApp.swift; sourceTree = "<group>"; };
 		A10200000000000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A10200000000000000000003 /* RPCBridge.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = RPCBridge.mm; sourceTree = "<group>"; };
+		A10200000000000000000020 /* Tunnel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tunnel.swift; sourceTree = "<group>"; };
+		A10200000000000000000021 /* WifiTunnel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WifiTunnel.swift; sourceTree = "<group>"; };
+		A10200000000000000000022 /* CableOnly.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CableOnly.h; sourceTree = "<group>"; };
 		A10200000000000000000004 /* RPCBridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RPCBridge.h; sourceTree = "<group>"; };
 		A10200000000000000000005 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A10200000000000000000006 /* llama.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = llama.xcframework; path = Frameworks/llama.xcframework; sourceTree = "<group>"; };
@@ -78,6 +83,9 @@
 				A10200000000000000000002 /* ContentView.swift */,
 				A10200000000000000000003 /* RPCBridge.mm */,
 				A10200000000000000000004 /* RPCBridge.h */,
+				A10200000000000000000022 /* CableOnly.h */,
+				A10200000000000000000020 /* Tunnel.swift */,
+				A10200000000000000000021 /* WifiTunnel.swift */,
 				A1020000000000000000000A /* Sidecar-Bridging-Header.h */,
 				A10200000000000000000005 /* Info.plist */,
 				A10B0000000000000000000D /* Assets.xcassets */,
@@ -177,6 +185,8 @@
 				A10100000000000000000001 /* SidecarApp.swift in Sources */,
 				A10100000000000000000002 /* ContentView.swift in Sources */,
 				A10100000000000000000003 /* RPCBridge.mm in Sources */,
+				A10100000000000000000020 /* Tunnel.swift in Sources */,
+				A10100000000000000000021 /* WifiTunnel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -223,7 +233,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sidecar/Sidecar.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				GENERATE_INFOPLIST_FILE = NO;
 				HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/Frameworks/llama.xcframework/ios-arm64/llama.framework/Headers",
@@ -239,7 +249,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.0.2;
+				MARKETING_VERSION = 0.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "app.backburner.$(DEVELOPMENT_TEAM)";
 				PRODUCT_NAME = Sidecar;
 				SUPPORTED_PLATFORMS = "iphoneos";
@@ -256,7 +266,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sidecar/Sidecar.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				GENERATE_INFOPLIST_FILE = NO;
 				HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/Frameworks/llama.xcframework/ios-arm64/llama.framework/Headers",
@@ -272,7 +282,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.0.2;
+				MARKETING_VERSION = 0.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "app.backburner.$(DEVELOPMENT_TEAM)";
 				PRODUCT_NAME = Sidecar;
 				SUPPORTED_PLATFORMS = "iphoneos";

@@ -24,6 +24,15 @@ before you spend time on it.
 - **Measured speed.** Speed claims come with the command, the hardware, and before/after numbers from the same build and
   settings (`bench/turn-bench.py`, `bench/session-bench.py`, `bench/long-bench.py`). Note anything else that was running.
 - **Nothing breaks without the phone.** `PHONE=0 scripts/serve.sh` (the Mac alone) must keep working.
+- **Security stays intact.** Every server the app runs must keep its connection check (cable only; Wi-Fi only through the
+  paired tunnel). `tests/security/run.sh` must pass, and a change to the app's networking also needs
+  `scripts/check-phone-exposure.py` run against a phone. See [SECURITY.md](SECURITY.md).
+
+## Before your first commit
+
+Run `scripts/install-hooks.sh` once. It installs checks that refuse commits containing secrets, personal paths, device ids,
+personal emails, model or binary files, and commits made with a non-noreply email. Put anything else private (your name,
+your devices' ids) in `.git/info/private-patterns`, which is never committed. Don't bypass the checks with `--no-verify`.
 
 ## Sign-off
 

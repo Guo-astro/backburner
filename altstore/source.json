@@ -22,6 +22,15 @@
       "screenshots": [],
       "versions": [
         {
+          "version": "0.0.3",
+          "buildVersion": "3",
+          "date": "2026-10-03T15:40:15Z",
+          "localizedDescription": "Security fix, please update. Over the USB cable the app now answers only the Mac on the other end, and it no longer announces itself on the network. Wi-Fi stays off unless you pair the phone over the cable (scripts/phone-wifi.sh); then it is encrypted and needs that key.",
+          "downloadURL": "https://github.com/StayLameBro/backburner/releases/download/v0.0.3/Backburner.ipa",
+          "size": 2744534,
+          "minOSVersion": "16.4"
+        },
+        {
           "version": "0.0.2",
           "buildVersion": "2",
           "date": "2026-10-03T02:43:24Z",
