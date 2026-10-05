@@ -1,9 +1,12 @@
+<|im_start|>user
+Read this document:
+
 # Backburner
 
 Plug your iPhone into your MacBook with a 10 Gb/s USB-C cable and it helps run Qwen3.8-27B locally:
 
 - **Faster prefill (up to 64k context).** For every batch of prompt tokens the Mac runs layers 1-40 and the iPhone runs 41-64
-  on its GPU, pipelined. Your agent waits less every time it reads a file or a tool result of more than ~512 tokens: 29-44% faster prefill at 16k-48k.
+  on its GPU, pipelined. Your agent waits less every time it reads a file or a tool result: 29-44% faster prefill at 16k-48k.
 - **More context.** A 24 GB Mac fits 64k tokens of 8-bit context next to the model. The iPhone holds the oldest part past that
   and computes attention over it: its GPU during prefill, its GPU and Neural Engine while writing. The server sizes the total
   from the phone's free memory at startup (196k-229k tokens at 8-bit on an iPhone 17 Pro Max). Tested end to end to 128k at
@@ -128,22 +131,10 @@ The Mac's own Neural Engine is not used: it shares the Mac's memory bandwidth an
   next step. It helps most at 64k-100k; deeper, the phone's GPU is already busy about two thirds of each step with old keys
   (140k), so a second phone is the bigger win there.
 - **Writing speed is the Mac's below 64k.** The phone only joins decoding past 64k (attention over the old keys).
-- **During a read, a phone failure turns the phone off for 60 s**; the batch reruns on the Mac and the server log says so.
-- **Past 64k, keep Backburner open and in front on the phone.** The phone then holds the oldest part of the conversation, and
-  the Mac no longer has it. If the phone stops answering for 15 s (the app sent to the background, the screen locked, the cable
-  pulled), the server stops with a message saying so; reopen the app and restart the server. The server log warns after 5 s.
-  iOS doesn't let an iPhone app use its GPU in the background, so to keep the screen from being locked by accident, use
-  Guided Access ([docs/INSTALL-IPHONE.md](docs/INSTALL-IPHONE.md#keeping-it-in-front)).
-- **Saving a session while the phone holds keys** (past 64k) needs app 0.0.4 or later (the rows come back from the phone).
-  Tested with the Mac's loopback phone, not yet on a real phone.
+- **A failure turns the phone off for 60 s**; the batch reruns on the Mac and the server log says so.
+- **Saving a session while the phone holds keys** (past 64k) is implemented for the current app (the rows come back from the
+  phone) but not yet tested end to end.
 - One request at a time (`-np 1`).
-
-## Security
-
-Over the USB cable, the phone app answers the Mac and nothing else. Over Wi-Fi it answers only a Mac you paired over the
-cable, through an encrypted, authenticated tunnel ([docs/WIFI.md](docs/WIFI.md)). Nothing is advertised on the network.
-Before 0.0.3 the app accepted connections over Wi-Fi too: update the app, or keep the phone's Wi-Fi off while Backburner is
-open. Report problems privately (Security → Report a vulnerability): [SECURITY.md](SECURITY.md).
 
 ## Setup
 
@@ -177,8 +168,8 @@ scripts/make-drafter.sh ~/Models/qwen38-27b-dflash2 ~/Models/dflash2-v2-q4km-sel
 #      DEVELOPMENT_TEAM=<your team id> UDID=<your iPhone's UDID> scripts/build-iphone.sh
 pip3 install coremltools      # serve.sh builds the phone's Neural Engine page model with it, once
 
-# 4. the phone's half of the model (layers 41-64, ~5.1 GB; the Mac computes the logits, so no head), copied over the cable
-python3 scripts/split-gguf.py ~/Models/Qwen3.8-27B-IQ4_XS.gguf ~/Models/tail-iq4xs-L40-nohead.gguf -L 40 --no-head
+# 4. the phone's half of the model (layers 41-64, ~6.9 GB), copied over the cable
+python3 scripts/split-gguf.py ~/Models/Qwen3.8-27B-IQ4_XS.gguf ~/Models/tail-iq4xs-L40-nohead.gguf -L 40
 scripts/phone-tail.sh L40
 
 # 5. after every reboot: let the GPU keep the model wired (macOS resets this limit)
@@ -193,9 +184,6 @@ The first `serve.sh` with the phone pushes the Neural Engine page model to it an
 that the startup line should read `split prefill on`, `remote KV on` and `ANE pages on`.
 
 `scripts/serve.sh` documents each setting next to the measurement that chose it.
-
-**8 GB Mac?** Split decode runs the 27B with the Mac on the first 20 layers and the phone on the rest, ~4 tok/s on a
-MacBook Neo + iPhone Air: [docs/SPLIT-DECODE.md](docs/SPLIT-DECODE.md).
 
 ## Reproducing the numbers
 
@@ -226,3 +214,58 @@ Built with a lot of help from Claude Opus 5.5.
 
 MIT license (llama.cpp keeps its own MIT license). Created by [StayLameBro](https://github.com/StayLameBro). Forks are
 welcome; if you start a separate project from it, please give it a different name and link back here.
+
+
+# The Neural Engine (ANE): what we measured
+
+Three places the ANE could help. One is built and in use; two were measured and set aside. All numbers measured on this
+project's hardware (MacBook Pro M4 Pro 24 GB; iPhone 16 Pro Max A18 Pro; iPhone 17 Pro Max A19 Pro), Qwen3.8-27B.
+
+## 1. iPhone ANE for the old context: built, in use
+
+Past 64k tokens the iPhone holds the oldest part of the KV cache and computes attention over it. Old keys and values never
+change, so each 16,384-key page of a layer is compiled into an ANE model with the keys and values as its fixed weights; each
+attention call sends only the queries. Code: `phone-attn/pa-ane.mm`, template builder `phone-attn/ane-kv/build.py`, `scripts/serve.sh`
+pushes it the first time it sees the phone (`scripts/phone-ane.sh IP` by hand) and prints "ANE pages on"; the engine is on
+whenever the template is on the phone.
+
+- **Accuracy:** with fp16 page weights the model gives the same output as the exact path on a real 51k-token session (33 of
+  33 tokens identical, same KL). int8 page weights are not accurate enough and are not used. The A18 ANE gives bit-identical
+  results to the Mac ANE.
+- **Speed (A18):** 1.85 ms per 16k-key page for all 4 KV heads, 0.113 ms per 1k keys (0.099 sustained over 20 s). That is 2-3x
+  the phone's SME2 unit (0.20-0.27) and GPU (0.31-0.37).
+- **Building a page:** the phone patches one template model's weight file in place (checked: byte-identical to a fresh build,
+  bit-identical outputs). First load ~0.74 s per page on the A18, including the on-device ANE compile; ~1.1 s per page in
+  140k runs.
+- **Effect at 140k** (75.5k keys on the phone), time per generated token in our 140k phone-KV test: 279 ms with no ANE pages, 208 ms with 2
+  pages per layer, 176 ms with 3. The ANE takes a share of each call (22% of the keys for 1-token calls, 43% for 8-token
+  calls); trying to learn the split online failed because an idle ANE clocks down.
+- **Not used for reading prompts:** prompt reading sends large calls that the phone GPU's dense kernel handles; page builds run
+  in the background and serve generation afterwards.
+
+## 2. iPhone ANE for reading prompts: measured, not built
+
+The idea: run each tail layer's feed-forward block on the ANE and the rest on the phone GPU.
+
+- **Fast alone:** the 27B feed-forward block (5120 -> 17408 -> 5120) on the A18 ANE runs at 6.7 TFLOPS with int8 weights
+  (9.9 with int8 activations too), about 5x what the phone GPU gets on the same layers.
+- **They don't add up on the phone:** with the ANE busy, the GPU's tail ran 1.5-2.2x slower and the ANE lost 35-40%. Both
+  together did only 1.1-1.25x the work of one. So it would have to take turns, not run side by side.
+- **Memory:** ~270 MB of app memory per int8 layer, so about 16 layers fit next to the tail.
+- **Projection, not built:** A18 split prefill from 1.08x to about 1.3x. Open question first: int8 accuracy on real weights.
+
+## 3. Mac ANE: measured, not used
+
+- **Raw compute adds:** the M4 Pro ANE held 7.5 TFLOPS on a feed-forward block while the GPU held 6.8, at the same time.
+- **Real prompt reading got slower:** llama.cpp prefill with the ANE busy lost 1-16% (median 9.6%).
+- **Memory is the wall:** an fp16 feed-forward layer on the ANE costs ~1.17 GB of system memory; int4 doesn't help (~0.5 GB per
+  layer). Next to the 27B model on a 24 GB Mac, only a handful of layers fit.
+- **Writing:** 26% slower with the ANE active (it shares memory bandwidth with the GPU).
+
+## Where the ANE matters next
+
+The phone ANE's job is the context the Mac can't hold. On this 24 GB Mac that starts past ~200k tokens; on a 16 GB Mac it
+starts much earlie
+
+Summarize the document in five bullet points.<|im_end|>
+<|im_start|>assistant
